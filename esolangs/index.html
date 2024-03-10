@@ -33,25 +33,14 @@
   button:hover {
     background:radial-gradient(#F99,#FCC 75%);
   }
-  a[href] {
-    font-family:"Segoe UI",sans-serif;
-    color:#0060C0;font-size:18px;
-    text-decoration:none;
-  }
-  a[href]::before {
-    content:"🔗";
-  }
 </style>
 </head>
 <!--  -->
-
 <body>
-  <h1>有头苍蝇.jpg</h1>
+  <h1>无头苍蝇.jpg</h1>
   <p>P tag test</p><br/>
   <textarea rows="6" cols="50" id="write"></textarea><br/>
   <button onclick="setWrite()">Commit to no where</button><br/>
-  <a href="./esolangs/index.html">esolang</a><br/>
-
 <script>
   const setCookie = (name,value,exdays) => {
     document.cookie = `${name}=${value};max-age=${24*60*60*exdays}`;
