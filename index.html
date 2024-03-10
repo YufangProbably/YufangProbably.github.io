@@ -51,7 +51,10 @@
     "$1",
   );
 
-  const setWrite = () => setCookie("message",document.getElementById("write").innerHTML,365);
+  const setWrite = () => {
+    alert(document.getElementById("write").innerHTML);
+    setCookie("message",document.getElementById("write").innerHTML,365)
+  };
 
   document.getElementById("write").innerHTML = getCookie("message");
   console.log(getCookie("message"));
