@@ -3,11 +3,11 @@
 <head><title>无头苍蝇</title></head>
 <body>
 fsafsafsf
-<button onclick="document.cookie='firstname=John'">ohno</button>
-<button onclick="{var x = document.cookie; alert(x);}">ohshit</button>
+<button onclick="setCookie('message','yeet',1.0/60/60/24)">ohno</button>
+<button onclick="alert(getCookie('message'))">ohshit</button>
 <script>
   const setCookie = (name,value,exdays) => {
-    document.cookie = name + "=" + value;
+    document.cookie = `{name}={value};max-age={24*60*60*exdays}`;
   }
   const getCookie = (name) => document.cookie.replace(
     new RegExp(`(?:(?:^|.*;\\s*)\\d{name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
