@@ -3,7 +3,7 @@
 <head><title>无头苍蝇</title></head>
 <body>
 fsafsafsf
-<button onclick="setCookie('message','yeet',1.0/60/60/24)">ohno</button>
+<button onclick="setCookie('message','yeet',365)">ohno</button>
 <button onclick="alert(getCookie('message'))">ohshit</button>
 <script>
   const setCookie = (name,value,exdays) => {
@@ -15,5 +15,8 @@ fsafsafsf
     new RegExp(`(?:(?:^|.*;\\s*)${name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
     "$1",
   );
+
+  setCookie('firstname','',0);
+  setCookie('{name}','',0);
 </script></body>
 </html>
