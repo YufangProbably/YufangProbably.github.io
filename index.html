@@ -7,12 +7,12 @@ fsafsafsf
 <button onclick="alert(getCookie('message'))">ohshit</button>
 <script>
   const setCookie = (name,value,exdays) => {
-    //;max-age={24*60*60*exdays}
-    alert(`{name}={value}`);
-    document.cookie = `{name}={value}`;
+    //;max-age=${24*60*60*exdays}
+    alert(`${name}=${value}`);
+    document.cookie = `${name}=${value}`;
   }
-  const getCookie = (name) => document.cookie.replace(
-    new RegExp(`(?:(?:^|.*;\\s*)\\d{name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
+  const getCookie = (name) => document.cookie + document.cookie.replace(
+    new RegExp(`(?:(?:^|.*;\\s*)${name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
     "$1",
   );
 </script></body>
