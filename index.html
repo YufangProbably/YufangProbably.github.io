@@ -1,21 +1,57 @@
 <!DOCTYPE html>
 <html>
-<head><title>无头苍蝇</title></head>
+
+<head>
+<title>有头苍蝇</title>
+<style>
+  body {
+    background:linear-gradient(to right,#FCC 50%,#CFF 50%);
+    text-align:center;
+    font-family:"Segoe UI",sans-serif;
+    color:#001040;font-size:18px;
+  }
+  h1 {
+    font-size:64px;
+    white-space:pre-warp;
+  }
+  textarea {
+    background-color:#CFF;
+    resize:none;
+    border:none;border-radius:2.5px;
+    outline:none;
+    font-family:"Segoe UI",sans-serif;
+    color:#001040;font-size:18px;
+    padding:5px;
+  }
+  button {
+    background:#FCC;
+    border:none;border-radius:2.5px;
+    font-family:"Segoe UI",sans-serif;
+    color:#001040;font-size:12px;
+    padding:5px;
+  }
+  button:hover {
+    background:radial-gradient(#F99,#FCC 75%);
+  }
+</style>
+</head>
+<!-- setCookie('message','yeet',365) -->
 <body>
-fsafsafsf
-<button onclick="setCookie('message','yeet',365)">ohno</button>
-<button onclick="alert(getCookie('message'))">ohshit</button>
+  <h1>有头苍蝇.jpg</h1>
+  <p>P tag test</p><br/>
+  <textarea rows="6" cols="50" id="write"></textarea><br/>
+  <button onclick="alert('eet')">commit</button><br/>
 <script>
+  document.getElementById("write")
   const setCookie = (name,value,exdays) => {
-    alert(`${name}=${value}`);
     document.cookie = `${name}=${value};max-age=${24*60*60*exdays}`;
   }
-  const getCookie = (name) => document.cookie + document.cookie.replace(
+  const delCookie = (name) => setCookie(name,'',0)
+  const getCookie = (name) => document.cookie.replace(
     new RegExp(`(?:(?:^|.*;\\s*)${name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
     "$1",
   );
+</script>
+</body>
 
-  setCookie('firstname','',0);
-  setCookie('{name}','',0);
-</script></body>
 </html>
