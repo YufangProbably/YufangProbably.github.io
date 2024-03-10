@@ -52,11 +52,11 @@
   );
 
   const setWrite = () => {
-    alert(document.getElementById("write").innerHTML);
-    setCookie("message",document.getElementById("write").innerHTML,365)
+    alert(document.getElementById("write").value);
+    setCookie("message",document.getElementById("write").value,365)
   };
 
-  document.getElementById("write").innerHTML = getCookie("message");
+  document.getElementById("write").value = getCookie("message");
   console.log(getCookie("message"));
 </script>
 </body>
