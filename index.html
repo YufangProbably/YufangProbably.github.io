@@ -35,14 +35,13 @@
   }
 </style>
 </head>
-<!-- setCookie('message','yeet',365) -->
+<!--  -->
 <body>
   <h1>有头苍蝇.jpg</h1>
   <p>P tag test</p><br/>
   <textarea rows="6" cols="50" id="write"></textarea><br/>
-  <button onclick="alert('eet')">commit</button><br/>
+  <button onclick="setWrite()">commit</button><br/>
 <script>
-  document.getElementById("write")
   const setCookie = (name,value,exdays) => {
     document.cookie = `${name}=${value};max-age=${24*60*60*exdays}`;
   }
@@ -51,6 +50,11 @@
     new RegExp(`(?:(?:^|.*;\\s*)${name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
     "$1",
   );
+
+  const setWrite = () => setCookie("message",document.getElementById("write").innerHTML,365);
+
+  document.getElementById("write").innerHTML = getCookie("message");
+  console.log(getCookie("message"));
 </script>
 </body>
 
