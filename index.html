@@ -1,0 +1,294 @@
+<html>
+<head>
+  <style>
+  body {
+    background-color: #144441;
+    font-family: Consolas, 微软雅黑, monospace;
+    font-size: 12px;
+    color: #FFFCF0;
+    
+  }
+  div {
+    background-color: #255552;
+    border: 2.5px solid #366663;
+    padding: 5px;
+    border-radius: 5px;
+  }
+
+  .clear {
+    background-color: rgba(0,0,0,0);
+    border: none;
+    border-radius: 0;
+  }
+
+  .container {
+    background-color: rgba(0,0,0,0);
+    border: 1px solid #255552;
+    border-radius: 0s;
+    width: 800px; height: 450px;
+    display: grid;
+    grid-gap: 5px;
+    grid-template-rows: repeat(4, 1fr 4fr) 20fr 20fr;
+    grid-template-columns: 3fr 27fr 3fr 27fr 20fr;
+  }
+  .console {
+    background-color: #192433;
+  }
+
+  .ptrdisplay {
+    background-color: #55575D;
+    border: 2.5px solid #66686E;
+    border-spacing: 0;
+    border-radius: 5px;
+    table-layout: fixed;
+    width: 100%;
+    overflow: hidden;
+  }
+  .selected.selected {
+    border: 1.5px solid #FFDD00;
+    transform: scale(1.125);
+  }
+  .ptrdisplay td {
+    background-color: #777980;
+    border: 1px solid #66686E;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+    word-wrap: break-word;
+    padding: 0;
+    margin: 0;
+  }
+
+  .ptrtag {
+    background-color: rgba(0,0,0,0);
+    border: none;
+    font-size: 14px;
+    text-align: center;
+  }
+  .ptrabove td {
+    background-color: rgba(0,0,0,0);
+    border: none;
+    font-size: 4px;
+    transform: scale(3);
+    text-align: center;
+    padding: 0;
+    margin: 0;
+  }
+
+  .boardmsg {
+    font-size: 16px;
+    overflow: hidden;
+    position: relative;
+    padding-bottom: 0;
+  }
+  .boardmsg .content{    
+    position: absolute;
+    bottom: 0;
+    left: 0;
+  }
+
+  .boardinf {
+    font-size: 16px;
+  }
+
+  #ptag1 {grid-area: 1 / 1 / 3 / 2; }
+  #ptag2 {grid-area: 1 / 3 / 3 / 4; }
+  #ptag3 {grid-area: 3 / 1 / 5 / 2; }
+  #ptag4 {grid-area: 3 / 3 / 5 / 4; }
+  #ptag5 {grid-area: 5 / 1 / 7 / 2; }
+  #ptag6 {grid-area: 5 / 3 / 7 / 4; }
+  #ptag7 {grid-area: 7 / 1 / 9 / 2; }
+  #ptag8 {grid-area: 7 / 3 / 9 / 4; }
+
+  #boardmsg {grid-area: 9 / 5 / 11 / 6; }
+  #boardinf {grid-area: 1 / 5 / 9 / 6; }
+
+  #cons1 {grid-area: 9 / 1 / 10 / 3; }
+  #cons2 {grid-area: 9 / 3 / 10 / 5; }
+  #cons3 {grid-area: 10 / 1 / 11 / 3; }
+  #cons4 {grid-area: 10 / 3 / 11/ 5; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="ptrtag" id="ptag1">A1</div>
+  <div class="ptrtag" id="ptag2">A2</div>
+  <div class="ptrtag" id="ptag3">A3</div>
+  <div class="ptrtag" id="ptag4">A4</div>
+  <div class="ptrtag" id="ptag5">A5</div>
+  <div class="ptrtag" id="ptag6">A6</div>
+  <div class="ptrtag" id="ptag7">A7</div>
+  <div class="ptrtag" id="ptag8">A8</div>
+
+
+  <table class="ptrabove" id="pabv1"><tr>
+    <td>0</td><td>1</td><td>2</td><td>3</td>
+    <td>4</td><td>5</td><td>6</td><td>7</td>
+  </tr></table>
+  <table class="ptrabove" id="pabv2"><tr>
+    <td>0</td><td>1</td><td>2</td><td>3</td>
+    <td>4</td><td>5</td><td>6</td><td>7</td>
+  </tr></table>
+  <table class="ptrdisplay" id="ptr1">
+    <tr>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td class="selected">os</td>
+      <td>oo</td>
+      <td>oo</td>
+    </tr>
+  </table>
+  <table class="ptrdisplay" id="ptr2">
+    <tr>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td class="selected">os</td>
+      <td>oo</td>
+      <td>oo</td>
+    </tr>
+  </table>
+
+
+  <table class="ptrabove" id="pabv3"><tr>
+    <td>0</td><td>1</td><td>2</td><td>3</td>
+    <td>4</td><td>5</td><td>6</td><td>7</td>
+  </tr></table>
+  <table class="ptrabove" id="pabv4"><tr>
+    <td>0</td><td>1</td><td>2</td><td>3</td>
+    <td>4</td><td>5</td><td>6</td><td>7</td>
+  </tr></table>
+  <table class="ptrdisplay" id="ptr4">
+    <tr>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td class="selected">os</td>
+      <td>oo</td>
+      <td>oo</td>
+    </tr>
+  </table>
+  <table class="ptrdisplay" id="ptr4">
+    <tr>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td class="selected">os</td>
+      <td>oo</td>
+      <td>oo</td>
+    </tr>
+  </table>
+
+
+  <table class="ptrabove" id="pabv5"><tr>
+    <td>0</td><td>1</td><td>2</td><td>3</td>
+    <td>4</td><td>5</td><td>6</td><td>7</td>
+  </tr></table>
+  <table class="ptrabove" id="pabv6"><tr>
+    <td>0</td><td>1</td><td>2</td><td>3</td>
+    <td>4</td><td>5</td><td>6</td><td>7</td>
+  </tr></table>
+  <table class="ptrdisplay" id="ptr5">
+    <tr>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td class="selected">os</td>
+      <td>oo</td>
+      <td>oo</td>
+    </tr>
+  </table>
+  <table class="ptrdisplay" id="ptr6">
+    <tr>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td class="selected">os</td>
+      <td>oo</td>
+      <td>oo</td>
+    </tr>
+  </table>
+
+
+  <table class="ptrabove" id="pabv7"><tr>
+    <td>0</td><td>1</td><td>2</td><td>3</td>
+    <td>4</td><td>5</td><td>6</td><td>7</td>
+  </tr></table>
+  <table class="ptrabove" id="pabv8"><tr>
+    <td>0</td><td>1</td><td>2</td><td>3</td>
+    <td>4</td><td>5</td><td>6</td><td>7</td>
+  </tr></table>
+  <table class="ptrdisplay" id="ptr7">
+    <tr>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td class="selected">os</td>
+      <td>oo</td>
+      <td>oo</td>
+    </tr>
+  </table>
+  <table class="ptrdisplay" id="ptr8">
+    <tr>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td>oo</td>
+      <td class="selected">os</td>
+      <td>oo</td>
+      <td>oo</td>
+    </tr>
+  </table>
+
+
+  <div class="console" id="cons1">Hello, world! </div>
+  <div class="console" id="cons2">炫！我疯狂地炫！</div>
+  <div class="console" id="cons3">mi jan misali</div>
+  <div class="console" id="cons4"></div>
+
+
+  <div class="boardmsg" id="boardmsg"><div class="clear content">
+    [11:45:14] 预防 加入了直播间。<br/>
+    [11:45:14] 预防: sb<br/>
+    [11:45:14] 预防: sb<br/>
+    [11:45:14] 预防: sb<br/>
+    [11:45:14] 预防: sb<br/>
+    [11:45:14] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] GUAqwq: ?<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+    [11:45:15] 预防: sb<br/>
+  </div></div>
+
+  <div class="boardinf" id="boardinf">
+    哦西塔
+  </div>
+</div>
+</body>
+</html>
