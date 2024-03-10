@@ -7,7 +7,9 @@ fsafsafsf
 <button onclick="alert(getCookie('message'))">ohshit</button>
 <script>
   const setCookie = (name,value,exdays) => {
-    document.cookie = `{name}={value};max-age={24*60*60*exdays}`;
+    //;max-age={24*60*60*exdays}
+    alert(`{name}={value}`);
+    document.cookie = `{name}={value}`;
   }
   const getCookie = (name) => document.cookie.replace(
     new RegExp(`(?:(?:^|.*;\\s*)\\d{name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
