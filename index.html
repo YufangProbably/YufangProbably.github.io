@@ -52,7 +52,8 @@
   );
 
   const setWrite = () => {
-    alert(document.getElementById("write").value);
+    let text = document.getElementById("write").value;
+    alert(`👍You just commited ${text ? '"'+text+'"' : "Nothing"}👍`);
     setCookie("message",document.getElementById("write").value,365)
   };
 
