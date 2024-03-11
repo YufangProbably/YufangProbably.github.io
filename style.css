@@ -1,0 +1,48 @@
+body {
+  background:linear-gradient(to right,#FCC 50%,#CFF 50%);
+  text-align:center;
+  font-family:"Segoe UI",sans-serif;
+  color:#001040;font-size:18px;
+}
+h1 {
+  font-size:64px;
+  white-space:pre-warp;
+}
+textarea {
+  background-color:#CFF;
+  resize:vertical;
+  border:none;border-radius:2.5px;
+  outline:none;
+  font-family:"Segoe UI",sans-serif;
+  color:#001040;font-size:18px;
+  padding:5px;
+}
+textarea::placeholder {
+  color:rgba(0,16,64,0.33);
+}
+button {
+  background:#FCC;
+  border:none;border-radius:2.5px;
+  font-family:"Segoe UI",sans-serif;
+  color:#001040;font-size:18px;
+  padding:5px;
+}
+button:hover {
+  background:radial-gradient(#F99,#FCC 75%);
+}
+a[href] {
+  font-family:"Segoe UI",sans-serif;
+  color:#0060C0;font-size:18px;
+  text-decoration:none;
+}
+a[href]::before {
+  content:"🔗";
+}
+
+.code {
+  font-family:"Consolas",monospace;
+}
+.unspaced {
+  display:block;
+  margin:0 auto;
+}

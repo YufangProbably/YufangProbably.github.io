@@ -2,62 +2,16 @@
 <html>
 
 <head>
-<title>有头苍蝇</title>
-<style>
-  body {
-    background:linear-gradient(to right,#FCC 50%,#CFF 50%);
-    text-align:center;
-    font-family:"Segoe UI",sans-serif;
-    color:#001040;font-size:18px;
-  }
-  h1 {
-    font-size:64px;
-    white-space:pre-warp;
-  }
-  textarea {
-    background-color:#CFF;
-    resize:none;
-    border:none;border-radius:2.5px;
-    outline:none;
-    font-family:"Segoe UI",sans-serif;
-    color:#001040;font-size:18px;
-    padding:5px;
-    display:block;
-    margin:0 auto;
-  }
-  button {
-    background:#FCC;
-    border:none;border-radius:2.5px;
-    font-family:"Segoe UI",sans-serif;
-    color:#001040;font-size:18px;
-    padding:5px;
-    display:block;
-    margin:0 auto;
-  }
-  button:hover {
-    background:radial-gradient(#F99,#FCC 75%);
-  }
-  a[href] {
-    font-family:"Segoe UI",sans-serif;
-    color:#0060C0;font-size:18px;
-    text-decoration:none;
-  }
-  a[href]::before {
-    content:"🔗";
-  }
-
-  .code {
-    font-family:"Consolas",monospace;
-  }
-</style>
+  <title>有头苍蝇</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
-<!--  -->
 
 <body>
   <h1>有头苍蝇.jpg</h1>
   <p>P tag test</p><br/>
-  <textarea rows="6" cols="50" id="write"></textarea><br/>
-  <button onclick="setWrite()">Commit to no where</button><br/>
+  <textarea rows="6" cols="50" id="write" class="unspaced" placeholder="Please type..."></textarea>
+  <button onclick="setWrite() class="unspaced">Commit to no where</button><br/>
+  <br/>
   <a href="./esolangs">esolang</a><br/>
 
 <script>
