@@ -113,7 +113,7 @@
             prints("".join(chr(i) for i in tape))
         ) if not output[0] and HQ9_any else None,
         (tape, output)
-    )),
+    )[-1]),
     None if __name__ != "__main__" else (
         code := sys.argv[1] if len(sys.argv) > 1 else input(),
         getattr(self, "HQ9+fuck_interpreter")(code),
