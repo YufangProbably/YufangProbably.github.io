@@ -13,7 +13,7 @@
         tape_index := 0, code_index := 0,
         flag := dict.fromkeys("HQ+", False),
         stack := [], breaks := [],
-        fucked := False, bottles := 0, HQ9_any := False,
+        fucked := False, bottles := 0, any_of_hqn := False,
         lasts := (tape, flag, tape_index),
         output := [""], last_output := output[0],
         prints := lambda s, file = stdout: (
@@ -68,7 +68,7 @@
                 tape_index := (
                     tape_index + (-1 if flag["+"] else 1)
                 ) % len(tape),
-                HQ9_any := True,
+                any_of_hqn := True,
             ) if current in "Hh" else (
                 (
                     tape.pop(tape_index),
@@ -76,7 +76,7 @@
                 ) if flag["Q"] else (
                     tape := tape[:tape_index] + [ord(i) for i in code] + [0],
                 ),
-                HQ9_any := True,
+                any_of_hqn := True,
             ) if current in "Qq" else (
                 tape.insert(
                     tape_index,
@@ -111,7 +111,7 @@
         ) for i in iter(lambda: not breaks, 0)],
         (
             prints("".join(chr(i) for i in tape))
-        ) if not output[0] and HQ9_any else None,
+        ) if not output[0] and any_of_hqn else None,
         (tape, output)
     )[-1]),
     None if __name__ != "__main__" else (
