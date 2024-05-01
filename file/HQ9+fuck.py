@@ -8,6 +8,7 @@
         stdout = sys.stdout,
         stderr = sys.stderr,
         stdin = sys.stdin,
+        file_name = "",
     : (
         tape := tape.copy(),
         tape_index := 0, code_index := 0,
@@ -48,7 +49,7 @@
                     bottles := bottles + 1,
                 ) if not fucked and bool(tape[tape_index]) == flag["+"] else (
                     tape.pop(tape_index),
-                    tape.insert(tape_index, 99),
+                    tape.insert(tape_index, bottle_count),
                     stack.append(code_index),
                 ) if not fucked and bool(tape[tape_index]) != flag["+"] else (
                     stack.pop(),
@@ -112,10 +113,30 @@
         (
             prints("".join(chr(i) for i in tape))
         ) if not output[0] and any_of_hqn else None,
+        (
+            temp := stdin.readline()[:-1],
+            temp2 := 0,
+            [temp2 := temp2 * 10 + (ord(i) - 48) for i in temp],
+            None if temp2 % 3 else prints("Fizz"),
+            None if temp2 % 5 else prints("Buzz"),
+            prints(f"{temp2}") if temp2 % 3 and temp2 % 5 else None,
+        ) if (
+            file_name[-4:].lower() == "hq9+"
+            and file_name[-5] != "."
+        ) else None,
         (tape, output)
     )[-1]),
     None if __name__ != "__main__" else (
-        code := sys.argv[1] if len(sys.argv) > 1 else input(),
-        getattr(self, "HQ9+fuck_interpreter")(code),
+        text := next(
+            i for i in sys.argv[1:] if i and i[0] != "-" or not i
+        ) if len(sys.argv) > 1 else input(),
+        (
+            f := open(text),
+            code := f.read(),
+            f.close(),
+            getattr(self, "HQ9+fuck_interpreter")(code, file_name = text),
+        ) if "-f" in sys.argv else (
+            getattr(self, "HQ9+fuck_interpreter")(text),
+        ),
     ),
 )
