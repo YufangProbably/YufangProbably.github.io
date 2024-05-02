@@ -35,10 +35,9 @@
   const params = new URL(document.location.href).searchParams;
   if (params.get("type") == "writeonly") {
     setCookie("message",params.get("text"),365);
-    document.documentElement.remove();
+    document.documentElement.innerHTML = "";
   } else if (params.get("type") == "readonly") {
-    document.documentElement.remove();
-    document.write(getCookie("message"));
+    document.documentElement.innerHTML = getCookie("message");
   }
 </script>
 </body>
