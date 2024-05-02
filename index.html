@@ -31,7 +31,15 @@
   };
 
   document.getElementById("write").value = getCookie("message");
-  console.log(getCookie("message"));
+
+  const params = new URL(document.location.href).searchParams;
+  if (params.get("type") == "writeonly") {
+    setCookie("message",params.get("text"),365);
+    document.documentElement.remove();
+  } else if (params.get("type") == "readonly") {
+    document.documentElement.remove();
+    document.write(getCookie("message"));
+  }
 </script>
 </body>
 
