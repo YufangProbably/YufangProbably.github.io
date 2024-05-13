@@ -1,3 +1,4 @@
+#Plz run in Sonic PI
 def customize_ppt notes, times
   times = times.ring
   notes.each_index do |i|
