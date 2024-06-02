@@ -1,4 +1,4 @@
-import { Context, Schema, Session, h } from 'koishi'
+import { Context, Schema, Session, h, escapeRegExp } from 'koishi'
 import * as what from './whatlang_interpreter'
 
 export const name = 'whatlang'
@@ -46,7 +46,6 @@ const run_what = async (code : string, session : Session) => {
             sendaudio: async (x : any) => {await session.send(h.audio(x)); return},
             sendvideo: async (x : any) => {await session.send(h.video(x)); return},
             sendfile: async (x : any) => {await session.send(h.file(x)); return},
-            sendquote: async (x : any) => {await session.send(h.quote(x)); return},
             sendhtml: async (x : any) => {await session.send(h("html", {}, [h("div", {style: {
                 padding: "5px",
                 "max-width": "96ch",
@@ -57,10 +56,11 @@ const run_what = async (code : string, session : Session) => {
             send: async (x : any) => {await session.send(
                 h.escape(typeof x == "string" ? x : what.formatting(x))
             ); return},
+            reesc: (x : any) => escapeRegExp(x),
             msgre: async (x : any) => {
                 const r : RegExp = Array.isArray(x) ? new RegExp(x[0], x[1]) : new RegExp(x)
                 for await (let i of session.bot.getMessageIter(session.channelId)) {
-                    if (r.test(i.content)) return [i.content, i.id, i.user.id]
+                    if (x == r || r.test(i.content)) return [i.content, i.id, i.user.id]
                 }
             },
             sleep: async (x : any) => {await new Promise ((res) => setTimeout(res, x * 1000)); return},

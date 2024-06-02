@@ -73,7 +73,6 @@ const run_what = async (code, session) => {
         sendaudio: async (x) => { await session.send(koishi_1.h.audio(x)); return; },
         sendvideo: async (x) => { await session.send(koishi_1.h.video(x)); return; },
         sendfile: async (x) => { await session.send(koishi_1.h.file(x)); return; },
-        sendquote: async (x) => { await session.send(koishi_1.h.quote(x)); return; },
         sendhtml: async (x) => {
             await session.send((0, koishi_1.h)("html", {}, [(0, koishi_1.h)("div", { style: {
                         padding: "5px",
@@ -88,10 +87,11 @@ const run_what = async (code, session) => {
             await session.send(koishi_1.h.escape(typeof x == "string" ? x : what.formatting(x)));
             return;
         },
+        reesc: (x) => (0, koishi_1.escapeRegExp)(x),
         msgre: async (x) => {
             const r = Array.isArray(x) ? new RegExp(x[0], x[1]) : new RegExp(x);
             for await (let i of session.bot.getMessageIter(session.channelId)) {
-                if (r.test(i.content))
+                if (x == r || r.test(i.content))
                     return [i.content, i.id, i.user.id];
             }
         },
