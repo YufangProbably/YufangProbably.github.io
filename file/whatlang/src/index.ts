@@ -1,8 +1,13 @@
-import { Context, Schema, Session, h, escapeRegExp } from 'koishi'
+import { Computed, Context, Schema, Session, h, escapeRegExp } from 'koishi'
 import * as what from './whatlang_interpreter'
 
 export const name = 'whatlang'
-export const Config = Schema.object({})
+export interface Config {
+  requireAppel: Computed<boolean>,
+}
+export const Config = Schema.object({
+  requireAppel: Schema.computed(Boolean).description("在群聊中，使用“¿”快捷方式是否必须 @ bot 或开头带昵称。").default(false),
+})
 
 const run_what = async (code : string, session : Session) => {
     let output : (h | string)[] = []
@@ -71,10 +76,10 @@ const run_what = async (code : string, session : Session) => {
 }
 const try_run_what = async (code : string, session : Session) => {
     try {return await run_what(code, session)}
-    catch (e) {return String(e)}
+    catch (e) {return h.escape(String(e))}
 }
 
-export function apply(ctx : Context) {
+export function apply(ctx : Context, config: Config) {
     ctx.command("whatlang <code:rawtext>", "运行 WhatLang 代码")
         .usage(h.escape(
             "可直接用 '¿<code>' 代替"
@@ -85,12 +90,10 @@ export function apply(ctx : Context) {
         .example(h.escape('¿ (http://spiderbuf.cn) link= (/s05)+ cat@ [((?<=<img.*?src=").*?(?=".*?>))g]match@ (link^ \+ sendimg@)#'))
         .action(({ session }, code) => try_run_what(code, session))
     ctx.middleware(async (session, next) => {
-        let content : string = h.unescape(session.stripped.content)
-        if (session.content[0] == "¿") {
-            try_run_what(h.unescape(session.content.slice(1)), session)
-                .then(x => session.send(x))
-                .catch(e => session.send("Error: " + h.escape(e)))
-            return
+        if (!session.isDirect && session.resolve(config.requireAppel) && !session.stripped.appel) return next()
+        let content : string = h.select(session.stripped.content, "text").map(e => e.attrs.content).join("")
+        if (content.startsWith("¿")) {
+            return await try_run_what(content.slice(1), session)
         } else {
             return next()
         }
