@@ -69,6 +69,16 @@ const formatting : (x : any) => string = (x : any) => {
     return String(x)
 }
 
+const is_valid_paren_string = (x : string) : boolean => {
+    let depth = 0
+    for (const c of x) {
+        if (c === "(") depth++
+        else if (c === ")") depth--
+        if (depth < 0) return false
+    }
+    return depth === 0
+}
+
 const repr_formatting : (x : any) => string = (x : any) => {
     if (Array.isArray(x)) {
         return "[" + x.map(
@@ -76,11 +86,7 @@ const repr_formatting : (x : any) => string = (x : any) => {
         ).join(" ") + "]"
     } else if (typeof x == "string") {
         if (/^[a-zA-Z][a-zA-Z0-9_]*$/.test(x)) return x
-        else if (!x.includes("(") ||
-            [...x].filter(i => i === "(").length == [...x].filter(i => i === ")").length &&
-            x.indexOf("(") < x.indexOf(")") &&
-            x.lastIndexOf("(") < x.lastIndexOf(")")
-        ) return "(" + x + ")"
+        else if (is_valid_paren_string(x)) return "(" + x + ")"
         else return '"' + (x
             .replace('"', '\\"')
             .replace('\n', '\\n')
@@ -95,6 +101,7 @@ const repr_formatting : (x : any) => string = (x : any) => {
     } else if (x == -Infinity) {
         return "ninf@"
     } else if (typeof x == "number") {
+        if (x < 0 || x >= 1.0e+21 || !Number.isInteger(x)) return "(" + String(x) + ")num@"
         return String(x)
     }
     return "${" + String(x) + "}"
@@ -286,11 +293,10 @@ const eval_what = async (
             if (temp2 === undefined || temp2 === null || Number.isNaN(temp2)) {
                 temp2 = stack[stack.length - 1].length
             }
-            if (temp === undefined || temp === null || Number.isNaN(temp)) {
-                stack[stack.length - 1].splice(temp2, 1)
-            } else {
-                stack[stack.length - 1].fill(temp, temp2, temp2 + 1)
-            }
+            stack[stack.length - 1].fill(temp, temp2, temp2 + 1)
+        } else if ("$" == c) {
+            temp = stack.pop()
+            stack[stack.length - 1].splice(temp, 1)
         }
         //console.log(stack)
         temp = void 0, temp2 = void 0
