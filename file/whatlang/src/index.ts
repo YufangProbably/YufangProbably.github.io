@@ -1,21 +1,37 @@
-import { Computed, Context, Schema, Session, h, escapeRegExp } from 'koishi'
+import {Computed, Context, Schema, Session, h, escapeRegExp} from 'koishi'
 import * as what from './whatlang_interpreter'
+import {help, help_list} from './helper'
 
 export const name = 'whatlang'
 export interface Config {
-  requireAppel: Computed<boolean>,
+    requireAppel: Computed<boolean>,
 }
 export const Config = Schema.object({
-  requireAppel: Schema.computed(Boolean).description("在群聊中，使用“¿”快捷方式是否必须 @ bot 或开头带昵称。").default(false),
+    requireAppel: (Schema
+        .computed(Boolean).default(false)
+        .description("在群聊中，使用“¿”快捷方式是否必须 @ bot 或开头带昵称。")
+    ),
 })
+
+const htmlize : Function = (x : any, style : Record<string, any> = {
+    padding: "5px",
+    "max-width": "96ch",
+    "font-family": "Consolas",
+    "overflow-wrap": "break-word",
+    "white-space": "break-spaces",
+}) => h("html", {}, [h("div", {style: style}, [typeof x == "string" ? x : what.formatting(x)])])
 
 const run_what = async (code : string, session : Session) => {
     let output : (h | string)[] = []
     let stack : any = await what.eval_what(
         code, [[]], 
         Object.assign({
-            prompt: async () => session.prompt(),
-            uprompt: async (x : any) => {
+            help: (x : any) => help(x),
+            helpall: (x : any) => void output.push(htmlize(help_list.reduce(
+                (last : any, n : any, i : number) => last + (i % 8 ? "\t" : "\n") + n, ""
+            ).trim())),
+            pr: async () => session.prompt(),
+            prompt: async (x : any) => {
                 return new Promise(res => {
                     const dispose = (session.app
                         .platform(session.platform)
@@ -27,50 +43,61 @@ const run_what = async (code : string, session : Session) => {
                             ) return next()
                             if (session2.cid != session.cid) return next()
                             clearTimeout(timeout)
-                            res(session2.stripped.content)
+                            res([
+                                session2.content, session2.messageId,
+                                session2.event.user.name, session2.userId,
+                            ])
                             dispose()
                         })
                     )
                     const timeout = setTimeout(() => {
                         dispose()
                         res(undefined)
-                    }, session.app.app.config.delay.prompt)
+                    }, session.app.config.delay.prompt)
                     return
                 })
             },
+            me: () => [
+                session.content, session.messageId,
+                session.event.user.name, session.userId,
+            ],
+            outimg: async (x : any) => void output.push(h.image(x)),
+            outaudio: async (x : any) => void output.push(h.audio(x)),
+            outvideo: async (x : any) => void output.push(h.video(x)),
+            outfile: async (x : any) => void output.push(h.file(x)),
+            outquote: async (x : any) => void output.push(h.quote(x)),
+            outat: async (x : any) => void output.push(h.at(x)),
+            outhtml: async (x : any) => void output.push(htmlize(x)),
+            outksq: async (x : any) => void output.push(htmlize(x, {
+                "line-height": "1",
+                "font-family": "Kreative Square",
+                "white-space": "break-spaces",
+            })),
+            send: async () => void await session.send(output.pop()),
+            sends: async (x : any) => void await session.send(output.splice(-x)),
+/*
+            panic: async () => {const d = session.app.before("send", () => {d(); return true})},
+            panics: async (x : any) => {const d = session.app.before("send", () => {
+                if (!x--) d()
+                return true
+            })},
+*/
             cat: async (x : any) => {
                 try {return await session.app.http.get(String(x), {responseType: "text"})}
                 catch (err) {session.send(String(err)); return}
             },
-            outimg: async (x : any) => {output.push(h.image(x)); return},
-            outaudio: async (x : any) => {output.push(h.audio(x)); return},
-            outvideo: async (x : any) => {output.push(h.video(x)); return},
-            outfile: async (x : any) => {output.push(h.file(x)); return},
-            outquote: async (x : any) => {output.push(h.quote(x)); return},
-            sendimg: async (x : any) => {await session.send(h.image(x)); return},
-            sendaudio: async (x : any) => {await session.send(h.audio(x)); return},
-            sendvideo: async (x : any) => {await session.send(h.video(x)); return},
-            sendfile: async (x : any) => {await session.send(h.file(x)); return},
-            sendhtml: async (x : any) => {await session.send(h("html", {}, [h("div", {style: {
-                padding: "5px",
-                "max-width": "96ch",
-                "font-family": "Consolas",
-                "overflow-wrap": "break-word",
-                "white-space": "break-spaces",
-            }}, [typeof x == "string" ? x : what.formatting(x)])])); return},
-            send: async (x : any) => {await session.send(
-                h.escape(typeof x == "string" ? x : what.formatting(x))
-            ); return},
             reesc: (x : any) => escapeRegExp(x),
             msgre: async (x : any) => {
                 const r : RegExp = Array.isArray(x) ? new RegExp(x[0], x[1]) : new RegExp(x)
                 for await (let i of session.bot.getMessageIter(session.channelId)) {
-                    if (x == r || r.test(i.content)) return [i.content, i.id, i.user.id]
+                    if (x === i.content || r.test(i.content)) {
+                       return [i.content, i.id, i.user.name, i.user.id]
+                    }
                 }
             },
-            sleep: async (x : any) => {await new Promise ((res) => setTimeout(res, x * 1000)); return},
+            sleep: async (x : any) => void await new Promise((res) => setTimeout(res, x * 1000)),
         }, what.default_var_dict),
-        (x : any) => output.push(x),
+        (x : any) => void output.push(h.text(x)),
     )
     return output
 }
@@ -82,12 +109,13 @@ const try_run_what = async (code : string, session : Session) => {
 export function apply(ctx : Context, config: Config) {
     ctx.command("whatlang <code:rawtext>", "运行 WhatLang 代码")
         .usage(h.escape(
-            "可直接用 '¿<code>' 代替"
+            "可直接用 '¿<code>' 代替\n" +
+            "输入 '¿help@' 获取帮助"
         ))
         .example(h.escape("¿ `Hello, world! `"))
         .example(h.escape("¿ 10 range@ (2 + 2 pow@ 1 +.` `)#"))
         .example(h.escape("¿ 0x=_ 10n=_ 1.:{` `:x^+.\\x=_n^1-n=}"))
-        .example(h.escape('¿ (http://spiderbuf.cn) link= (/s05)+ cat@ [((?<=<img.*?src=").*?(?=".*?>))g]match@ (link^ \+ sendimg@)#'))
+        .example(h.escape('¿ (http://spiderbuf.cn) link= (/s05)+ cat@ [((?<=<img.*?src=").*?(?=".*?>))g]match@ (link^ \+ outimg@send@)#'))
         .action(({ session }, code) => try_run_what(code, session))
     ctx.middleware(async (session, next) => {
         if (!session.isDirect && session.resolve(config.requireAppel) && !session.stripped.appel) return next()

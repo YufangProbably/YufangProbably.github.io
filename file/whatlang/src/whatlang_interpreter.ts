@@ -6,6 +6,9 @@ const op : Record<string, (x : any, y : any) => any> = {
     "%": (x, y) => (x % y),
     "?": (x, y) => x == y ? 0 : +(x > y) - +(x < y) || NaN,
 }
+
+const relize = (x : string) => Array.isArray(x) ? new RegExp(x[0], x[1]) : x
+
 var default_var_dict : Record<string, any> = ({
     num: (x : any) => Number(x),
     str: (x : any) => (
@@ -18,32 +21,55 @@ var default_var_dict : Record<string, any> = ({
     band: (x : any, y : any) => x & y,
     bor: (x : any, y : any) => x | y,
     bxor: (x : any, y : any) => x ^ y,
+    bnot: (x : any) => ~x,
     rand: () => Math.random(),
     randint: (x : any, y : any) => Math.floor((Math.random() * (x - y)) + y),
     flr: (x : any) => Math.floor(x),
     range: (x : any) => [...Array(x).keys()],
-    len: (x : any) => x.length,
+    len: (s : any[][] = []) => [...s.at(-1).at(-1)].length,
     split: (x : any, y : any) => (typeof x == "string" ? x : formatting(x)).split(y),
-    join: (x : any, y : any) => [...x].map(i => typeof i == "string" ? i : formatting(i)).join(y),
-    reverse: (x : any) => [...x].reverse(),
-    index: (x : any, y : any) => [...x].indexOf(y),
-    chr: (x : any) => String.fromCodePoint(x),
+    join: (x : any, s : any[][] = []) => ([...s.at(-1).at(-1)]
+        .map(i => typeof i == "string" ? i : formatting(i))
+        .join(x)
+    ),
+    reverse: (s : any[][] = []) => [...s.at(-1).at(-1)].reverse(),
+    index: (x : any, s : any[][] = []) => [...s.at(-1).at(-1)].indexOf(x),
+    filter: async (
+        x : any,
+        s : any[][] = [],
+        v : Record<string, any> = {},
+        o : (x : any) => void = () => void 0
+    ) => await [...s.at(-1).at(-1)].reduce(async (memo : any, i : any) => (
+        [...await memo, [i, await exec_what([s.at(-1).concat([i, x])], v, o)]]
+    ), []).filter(i => i[1]).map(i => i[0]),
+    chr: (x : any) => Array.isArray(x) ? String.fromCodePoint(...x) : String.fromCodePoint(x),
     ord: (x : any) => [...typeof x == "string" ? x : formatting(x)].map(i => i.codePointAt(0)),
     and: (x : any, y : any) => x && y,
     or: (x : any, y : any) => x || y,
     nan: () => NaN,
     undef: () => undefined,
+    null: () => null,
     inf: () => Infinity,
     ninf: () => -Infinity,
     eq: (x : any, y : any) => x === y,
-    stack: (s : any[][] = []) => s[s.length - 1],
-    stak: (s : any[][] = []) => [...s[s.length - 1]],
-    match: (x : any, y : any) => [...x.match(
-        Array.isArray(y) ? new RegExp(y[0], y[1]) : y
-    ) || []],
-    repl: (x : any, y : any, z : any) => x.replace(
-        Array.isArray(y) ? new RegExp(y[0], y[1]) : y, z
-    ),
+    stak: (s : any[][] = []) => s.at(-1),
+    stack: (s : any[][] = []) => [...s.at(-1)],
+    "try": async (
+        s : any[][] = [],
+        v : Record<string, any> = {},
+        o : (x : any) => void = () => void 0
+    ) => {
+        let temp : string[] = [undefined, undefined]
+        try {
+            await exec_what(s, v, o)
+        } catch (e) {
+            temp = [e.name, e.message]
+        }
+        return temp
+    },
+    "throw": (x : any) => {throw new Error(x)},
+    match: (x : any, y : any) => [...x.match(relize(y)) || []],
+    repl: (x : any, y : any, z : any) => x.replace(relize(y), z),
 })
 
 const formatting : (x : any) => string = (x : any) => {
@@ -94,6 +120,8 @@ const repr_formatting : (x : any) => string = (x : any) => {
         ) + '"'
     } else if (x === undefined) {
         return "undef@"
+    } else if (x === null) {
+        return "null@"
     } else if (Number.isNaN(x)) {
         return "nan@"
     } else if (x == Infinity) {
@@ -101,7 +129,10 @@ const repr_formatting : (x : any) => string = (x : any) => {
     } else if (x == -Infinity) {
         return "ninf@"
     } else if (typeof x == "number") {
-        if (x < 0 || x >= 1.0e+21 || !Number.isInteger(x)) return "(" + String(x) + ")num@"
+        if (
+           x < 0 || x >= 1.0e+21 ||
+           !Number.isInteger(x)
+        ) return "(" + String(x) + ")num@"
         return String(x)
     }
     return "${" + String(x) + "}"
@@ -112,19 +143,19 @@ const exec_what = async (
     var_dict : Record<string, any>,
     output : (x : any) => void,
 ) => {
-    var stack : any[] = fstack[fstack.length - 1]
+    var stack : any[] = fstack.at(-1)
     let temp : any, temp2 : any
     temp = stack.pop()
     if (temp in var_dict && typeof var_dict[temp] === "function") {
         temp = var_dict[temp]
         temp2 = temp.length ? stack.splice(-temp.length) : []
-        temp = await Promise.resolve(temp(...temp2, fstack))
+        temp = await Promise.resolve(temp(...temp2, fstack, var_dict, output))
         if (temp !== undefined && temp !== null) stack.push(temp)
     } else {
         temp2 = temp in var_dict ? var_dict[temp] : temp
         await eval_what(temp2, fstack, var_dict, output)
     }
-    return stack[stack.length - 1]
+    return stack.at(-1)
 }
 const run_what = async (
     code : string, 
@@ -147,7 +178,7 @@ const eval_what = async (
     var_dict : Record<string, any>,
     output : (x : any) => void = (x : any) => console.log(x),
 ) => {
-    var stack : any[] = fstack[fstack.length - 1]
+    var stack : any[] = fstack.at(-1)
     let i : number = -1, c : string
     let temp : any, temp2 : any
     while (++i < code.length) {
@@ -170,140 +201,138 @@ const eval_what = async (
             } while (c && /[a-zA-Z0-9_]/.test(c))
             c = code[--i]
             stack.push(temp.toLowerCase())
-        } else if ("'" == c) {
+        } else if ("'" === c) {
             stack.push(c = code[++i])
         } else if (/["`]/.test(c)) {
             temp = ""
             temp2 = c
             c = code[++i]
             while (c) {
-                if ("\\" == c) {
+                if ("\\" === c) {
                     c = code[++i]
                     temp += ({
                         "n": "\n",
                         "t": "\t",
                         [temp2]: temp2
                     })[c] ?? c
-                } else if (temp2 == c) break
+                } else if (temp2 === c) break
                 else temp += c
                 c = code[++i]
             }
-            if ('"' == temp2) {
+            if ('"' === temp2) {
                 stack.push(temp)
-            } else if ('`' == temp2) {
+            } else if ('`' === temp2) {
                 output(temp)
             }
         } else if (c in op) {
             temp = stack.pop()
             stack.push(op[c](stack.pop(), temp))
-        } else if ('~' == c) {
+        } else if ('~' === c) {
             temp = stack.pop()
             stack.push(Number.isNaN(temp) ? 0 : +!temp)
-        } else if ('[' == c) {
+        } else if ('[' === c) {
             stack = []
             fstack.push(stack)
-        } else if ('|' == c) {
+        } else if ('|' === c) {
             fstack.push(stack.pop())
-        } else if (']' == c) {
-            stack = fstack[fstack.length - 2]
+        } else if (']' === c) {
+            if (fstack.length <= 2) fstack.unshift([])
+            stack = fstack.at(-2)
             stack.push(fstack.pop())
-        } else if ('(' == c) {
+        } else if ('(' === c) {
             temp = ""
             temp2 = 1
             c = code[++i]
             while (true) {
-                if ('(' == c) ++temp2
-                else if (')' == c) --temp2
+                if ('(' === c) ++temp2
+                else if (')' === c) --temp2
                 if (!c || !temp2) break
                 temp += c
                 c = code[++i]
             }
             stack.push(temp)
-        } else if ('.' == c) {
-            temp = stack[stack.length - 1]
+        } else if ('.' === c) {
+            temp = stack.at(-1)
             output(typeof temp == "string" ? temp : formatting(temp))
-        } else if ('\\' == c) {
+        } else if ('\\' === c) {
             if (stack.length >= 2) {
                 temp = stack.pop()
                 temp2 = stack.pop()
                 stack.push(temp, temp2)
             }
-        } else if (':' == c) {
+        } else if (':' === c) {
             if (stack.length >= 1) {
                 temp = stack.pop()
                 stack.push(temp, temp)
             }
-        } else if ('_' == c) {
+        } else if ('_' === c) {
             stack.pop()
-        } else if ('=' == c) {
+        } else if ('=' === c) {
             temp = stack.pop()
-            var_dict[temp] = stack[stack.length - 1]
-        } else if ('^' == c) {
+            var_dict[temp] = stack.at(-1)
+        } else if ('^' === c) {
             temp = stack.pop()
             temp2 = var_dict[temp]
-            stack.push(typeof temp2 == "function" ? "(" + temp + "@)" : temp2)
-        } else if ('@' == c) {
+            stack.push(typeof temp2 == "function" ? temp + "@" : temp2)
+        } else if ('@' === c) {
             await exec_what(fstack, var_dict, output)
-            stack = fstack[fstack.length - 1]
-        } else if ('>' == c) {
+            stack = fstack.at(-1)
+        } else if ('>' === c) {
             stack.push(stack.splice(-stack.pop()))
-        } else if ('<' == c) {
+        } else if ('<' === c) {
             stack.push(...stack.pop())
-        } else if ('{' == c) {
+        } else if ('{' === c) {
             temp = stack.pop()
             if (!(Number.isNaN(temp) || temp)) {
                 temp = 1
                 while (c && temp) {
                     c = code[++i]
-                    if ('{' == c) ++temp
-                    else if ('}' == c) --temp
+                    if ('{' === c) ++temp
+                    else if ('}' === c) --temp
                 }
             }
-        } else if ('}' == c) {
+        } else if ('}' === c) {
             temp = stack.pop()
             if (Number.isNaN(temp) || temp) {
                 temp = -1
                 while (c && temp) {
                     c = code[--i]
-                    if ('{' == c) ++temp
-                    else if ('}' == c) --temp
+                    if ('{' === c) ++temp
+                    else if ('}' === c) --temp
                 }
             }
-        } else if ('!' == c) {
+        } else if ('!' === c) {
             temp = 1
-            while ('!' == code[++i]) temp++
+            while ('!' === code[++i]) temp++
             c = code[--i]
             while (c && temp) {
                 c = code[++i]
-                if ('{' == c) ++temp
-                else if ('}' == c) --temp
+                if ('{' === c) ++temp
+                else if ('}' === c) --temp
             }
-        } else if ("#" == c) {
-            temp2 = stack.pop()
+        } else if ("#" === c) {
             temp = stack.pop()
-            stack.push(await temp.reduce(async (memo : any, x : any) => (
-                [...await memo, await exec_what([stack.concat([x, temp2])], var_dict, output)]
+            stack.push(await stack.at(-1).reduce(async (memo : any, x : any) => (
+                [...await memo, await exec_what([stack.concat([x, temp])], var_dict, output)]
             ), []))
-        } else if ("," == c) {
+        } else if ("," === c) {
             temp = stack.pop()
-            stack.push(stack[stack.length - 1].slice(temp, temp + 1)[0])
-        } else if (";" == c) {
+            stack.push(stack.at(-1).slice(temp, temp + 1)[0])
+        } else if (";" === c) {
             temp = stack.pop()
             temp2 = stack.pop()
             if (temp2 === undefined || temp2 === null || Number.isNaN(temp2)) {
-                temp2 = stack[stack.length - 1].length
+                temp2 = stack.at(-1).length
             }
-            stack[stack.length - 1].fill(temp, temp2, temp2 + 1)
-        } else if ("$" == c) {
+            stack.at(-1).fill(temp, temp2, temp2 + 1)
+        } else if ("$" === c) {
             temp = stack.pop()
-            stack[stack.length - 1].splice(temp, 1)
+            stack.at(-1).splice(temp, 1)
         }
         //console.log(stack)
         temp = void 0, temp2 = void 0
     }
-    return stack[stack.length - 1]
+    return stack.at(-1)
 }
-
-run_what('(aaaa"b) [(a+.(b)) ""]match @.').then(x => console.log(x.output))
 
 export {formatting, exec_what, eval_what, run_what, default_var_dict}
