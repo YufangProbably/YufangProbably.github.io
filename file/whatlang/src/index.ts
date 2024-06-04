@@ -28,8 +28,8 @@ const run_what = async (code : string, session : Session) => {
         Object.assign({
             help: (x : any) => help(x),
             helpall: (x : any) => void output.push(htmlize(help_list.reduce(
-                (last : any, n : any, i : number) => last + (i % 8 ? " ".repeat(16 - n.length) : "\n") + n, ""
-            ).trim())),
+                (last : any, n : any, i : number) => last + n + ((i + 1) % 8 ? " ".repeat(10 - n.length) : "\n"), ""
+            ))),
             pr: async () => session.prompt(),
             prompt: async (x : any) => {
                 return new Promise(res => {

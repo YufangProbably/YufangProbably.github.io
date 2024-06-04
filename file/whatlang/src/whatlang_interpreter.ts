@@ -26,19 +26,19 @@ var default_var_dict : Record<string, any> = ({
     randint: (x : any, y : any) => Math.floor((Math.random() * (x - y)) + y),
     flr: (x : any) => Math.floor(x),
     range: (x : any) => [...Array(x).keys()],
-    len: (s : any[][] = []) => [...s.at(-1).at(-1)].length,
+    len: (s : any[][]) => [...s.at(-1).at(-1)].length,
     split: (x : any, y : any) => (typeof x == "string" ? x : formatting(x)).split(y),
-    join: (x : any, s : any[][] = []) => ([...s.at(-1).at(-1)]
+    join: (x : any, s : any[][]) => ([...s.at(-1).at(-1)]
         .map(i => typeof i == "string" ? i : formatting(i))
         .join(x)
     ),
-    reverse: (s : any[][] = []) => [...s.at(-1).at(-1)].reverse(),
-    index: (x : any, s : any[][] = []) => [...s.at(-1).at(-1)].indexOf(x),
+    reverse: (s : any[][]) => [...s.at(-1).at(-1)].reverse(),
+    index: (x : any, s : any[][]) => [...s.at(-1).at(-1)].indexOf(x),
     filter: async (
         x : any,
-        s : any[][] = [],
-        v : Record<string, any> = {},
-        o : (x : any) => void = () => void 0
+        s : any[][],
+        v : Record<string, any>,
+        o : (x : any) => void,
     ) => (await [...s.at(-1).at(-1)].reduce(async (memo : any, i : any) => (
         [...await memo, [i, await exec_what([s.at(-1).concat([i, x])], v, o)]]
     ), [])).filter(i => i[1]).map(i => i[0]),
@@ -52,12 +52,12 @@ var default_var_dict : Record<string, any> = ({
     inf: () => Infinity,
     ninf: () => -Infinity,
     eq: (x : any, y : any) => x === y,
-    stak: (s : any[][] = []) => s.at(-1),
-    stack: (s : any[][] = []) => [...s.at(-1)],
+    stak: (s : any[][]) => s.at(-1),
+    stack: (s : any[][]) => [...s.at(-1)],
     try: async (
-        s : any[][] = [],
-        v : Record<string, any> = {},
-        o : (x : any) => void = () => void 0
+        s : any[][],
+        v : Record<string, any>,
+        o : (x : any) => void,
     ) => {
         let temp : string[] = [undefined, undefined]
         try {
@@ -71,6 +71,8 @@ var default_var_dict : Record<string, any> = ({
     match: (x : any, y : any) => [...x.match(relize(y)) || []],
     repl: (x : any, y : any, z : any) => x.replace(relize(y), z),
 })
+var need_svo : string[] = "filter try".split(" ")
+var need_fstack : string[] = "len join reverse stak stack".split(" ")
 
 const formatting : (x : any) => string = (x : any) => {
     if (Array.isArray(x)) {
@@ -144,12 +146,20 @@ const exec_what = async (
     output : (x : any) => void,
 ) => {
     var stack : any[] = fstack.at(-1)
-    let temp : any, temp2 : any
+    let temp : any, temp2 : any, temp3 : any
+    //I should stop temping
     temp = stack.pop()
     if (temp in var_dict && typeof var_dict[temp] === "function") {
+        temp3 = (
+            need_svo.includes(temp) ? 3 :
+            need_fstack.includes(temp) ? 1 :
+            0
+        )
         temp = var_dict[temp]
-        temp2 = temp.length ? stack.splice(-temp.length) : []
-        temp = await Promise.resolve(temp(...temp2, fstack, var_dict, output))
+        temp2 = [fstack, var_dict, output]
+        temp2.splice(temp3)
+        temp2 = (temp.length > temp3 ? stack.splice(temp3 - temp.length) : []).concat(temp2)
+        temp = await temp(...temp2)
         if (temp !== undefined && temp !== null) stack.push(temp)
     } else {
         temp2 = temp in var_dict ? var_dict[temp] : temp

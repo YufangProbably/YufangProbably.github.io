@@ -6,8 +6,8 @@ const S = (x : Raw, ...eltwa : any[]) => {
   const tag : Function = (x : Raw, ...eltwa : any[]) => {
     if (!x) return str.slice(0, str.length - 1)
     str += String.raw(x, ...eltwa)
-        .replace(/\\`/g, "`")
-        .replace(/\\\\/g, "\\")
+      .replace(/\\`/g, "`")
+      .replace(/\\\\/g, "\\")
     if (str.slice(-1) != "_") str += "\n"
     else str = str.slice(0, -1)
     return tag
@@ -197,13 +197,13 @@ const help_list : string[] = (Object.keys(help_record)
 ).sort()
 
 const help : Function = (x : string | undefined) => {
-    if (!x || !x.length) {
+    if (!x) {
         return (S
             `WhatLang 为一门大致上基于栈，完全没有任何优势的语言。`
             `这破玩意目前只有一个 TypeScript 写的，在 Koishi 上运行的解释器（也就是你用的这个），_`
             `所以很多指令都是只能在聊天平台上运行的。（也许我本来就是为了这个？）`
             ``
-            `输入 '¿helpall@' 返回全部内置函数列表`
+            `输入 '¿helpall@' （不带句号！）返回全部内置函数列表`
             `输入 '¿(内置函数名) help@.' 或 '¿("'" 加某个 ASCII 字符) help@.' 返回对应指令帮助`
             `输入 '¿example help@.' 返回一些示例`
         ())
@@ -265,7 +265,7 @@ const help : Function = (x : string | undefined) => {
     } else {
         let name : string | undefined = Object.keys(help_record).find((i : any) => i.split(" ").includes(x))
         if (!name) return "指令未芝士——大概是谁自个儿写的变量？"
-        return name.replace(/(?<=\b[a-zA-Z][a-zA-Z0-9_]*\b)/g, "@") + "\n" + help_record[name]
+        return name.replace(/(?<=\b[a-zA-Z][a-zA-Z0-9_]*\b)/g, "@") + "\n\n" + help_record[name]
     }
 }
 
