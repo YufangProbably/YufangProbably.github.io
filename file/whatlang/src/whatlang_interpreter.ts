@@ -39,9 +39,9 @@ var default_var_dict : Record<string, any> = ({
         s : any[][] = [],
         v : Record<string, any> = {},
         o : (x : any) => void = () => void 0
-    ) => await [...s.at(-1).at(-1)].reduce(async (memo : any, i : any) => (
+    ) => (await [...s.at(-1).at(-1)].reduce(async (memo : any, i : any) => (
         [...await memo, [i, await exec_what([s.at(-1).concat([i, x])], v, o)]]
-    ), []).filter(i => i[1]).map(i => i[0]),
+    ), [])).filter(i => i[1]).map(i => i[0]),
     chr: (x : any) => Array.isArray(x) ? String.fromCodePoint(...x) : String.fromCodePoint(x),
     ord: (x : any) => [...typeof x == "string" ? x : formatting(x)].map(i => i.codePointAt(0)),
     and: (x : any, y : any) => x && y,
@@ -54,7 +54,7 @@ var default_var_dict : Record<string, any> = ({
     eq: (x : any, y : any) => x === y,
     stak: (s : any[][] = []) => s.at(-1),
     stack: (s : any[][] = []) => [...s.at(-1)],
-    "try": async (
+    try: async (
         s : any[][] = [],
         v : Record<string, any> = {},
         o : (x : any) => void = () => void 0
@@ -67,7 +67,7 @@ var default_var_dict : Record<string, any> = ({
         }
         return temp
     },
-    "throw": (x : any) => {throw new Error(x)},
+    throw: (x : any) => {throw new Error(x)},
     match: (x : any, y : any) => [...x.match(relize(y)) || []],
     repl: (x : any, y : any, z : any) => x.replace(relize(y), z),
 })

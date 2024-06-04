@@ -197,14 +197,14 @@ const help_list : string[] = (Object.keys(help_record)
 ).sort()
 
 const help : Function = (x : string | undefined) => {
-    if (x === undefined) {
+    if (!x || !x.length) {
         return (S
             `WhatLang 为一门大致上基于栈，完全没有任何优势的语言。`
             `这破玩意目前只有一个 TypeScript 写的，在 Koishi 上运行的解释器（也就是你用的这个），_`
             `所以很多指令都是只能在聊天平台上运行的。（也许我本来就是为了这个？）`
             ``
             `输入 '¿helpall@' 返回全部内置函数列表`
-            `输入 '¿(内置函数名 或 某个 ASCII 字符) help@' 返回对应指令帮助`
+            `输入 '¿(内置函数名) help@.' 或 '¿("'" 加某个 ASCII 字符) help@.' 返回对应指令帮助`
             `输入 '¿example help@.' 返回一些示例`
         ())
     } else if (x === "all") {

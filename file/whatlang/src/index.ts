@@ -28,7 +28,7 @@ const run_what = async (code : string, session : Session) => {
         Object.assign({
             help: (x : any) => help(x),
             helpall: (x : any) => void output.push(htmlize(help_list.reduce(
-                (last : any, n : any, i : number) => last + (i % 8 ? "\t" : "\n") + n, ""
+                (last : any, n : any, i : number) => last + (i % 8 ? " ".repeat(16 - n.length) : "\n") + n, ""
             ).trim())),
             pr: async () => session.prompt(),
             prompt: async (x : any) => {
@@ -73,6 +73,8 @@ const run_what = async (code : string, session : Session) => {
                 "font-family": "Kreative Square",
                 "white-space": "break-spaces",
             })),
+            nout: () => void output.pop(),
+            nouts: (x : any) => void output.splice(-x),
             send: async () => void await session.send(output.pop()),
             sends: async (x : any) => void await session.send(output.splice(-x)),
 /*
