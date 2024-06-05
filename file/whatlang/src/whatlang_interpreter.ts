@@ -47,11 +47,10 @@ var default_var_dict : Record<string, any> = ({
     and: (x : any, y : any) => x && y,
     or: (x : any, y : any) => x || y,
     nan: () => NaN,
-    undef: () => undefined,
-    null: () => null,
+    undef: (s : any[][]) => void s.at(-1).push(undefined),
     inf: () => Infinity,
     ninf: () => -Infinity,
-    eq: (x : any, y : any) => x === y,
+    eq: (x : any, y : any) => +(x === y),
     stak: (s : any[][]) => s.at(-1),
     stack: (s : any[][]) => [...s.at(-1)],
     try: async (
@@ -72,7 +71,7 @@ var default_var_dict : Record<string, any> = ({
     repl: (x : any, y : any, z : any) => x.replace(relize(y), z),
 })
 var need_svo : string[] = "filter try".split(" ")
-var need_fstack : string[] = "len join reverse stak stack".split(" ")
+var need_fstack : string[] = "len join reverse stak stack undef".split(" ")
 
 const formatting : (x : any) => string = (x : any) => {
     if (Array.isArray(x)) {
@@ -122,8 +121,6 @@ const repr_formatting : (x : any) => string = (x : any) => {
         ) + '"'
     } else if (x === undefined) {
         return "undef@"
-    } else if (x === null) {
-        return "null@"
     } else if (Number.isNaN(x)) {
         return "nan@"
     } else if (x == Infinity) {
