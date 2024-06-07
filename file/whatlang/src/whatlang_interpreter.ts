@@ -33,14 +33,14 @@ var default_var_dict : Record<string, any> = ({
         .join(x)
     ),
     reverse: (s : any[][]) => [...s.at(-1).at(-1)].reverse(),
-    index: (x : any, s : any[][]) => [...s.at(-1).at(-1)].indexOf(x),
+    in: (x : any, s : any[][]) => [...s.at(-1).at(-1)].indexOf(x),
     filter: async (
         x : any,
         s : any[][],
         v : Record<string, any>,
         o : (x : any) => void,
     ) => (await [...s.at(-1).at(-1)].reduce(async (memo : any, i : any) => (
-        [...await memo, [i, await exec_what([s.at(-1).concat([i, x])], v, o)]]
+        [...await memo, [i, await exec_what([...s.slice(0, -1), s.at(-1).concat([i, x])], v, o)]]
     ), [])).filter(i => i[1]).map(i => i[0]),
     chr: (x : any) => Array.isArray(x) ? String.fromCodePoint(...x) : String.fromCodePoint(x),
     ord: (x : any) => [...typeof x == "string" ? x : formatting(x)].map(i => i.codePointAt(0)),
@@ -80,11 +80,11 @@ const formatting : (x : any) => string = (x : any) => {
         ).join(", ") + "]"
     } else if (typeof x == "string") {
         return '"' + (x
-            .replace('"', '\\"')
-            .replace('\n', '\\n')
-            .replace('\t', '\\t')
+            .replace(/"/g, '\\"')
+            .replace(/\n/g, '\\n')
+            .replace(/\t/g, '\\t')
         ) + '"'
-    } else if (x === undefined) {
+    } else if (x == undefined) {
         return "undef"
     } else if (Number.isNaN(x)) {
         return "NaN"
@@ -157,7 +157,7 @@ const exec_what = async (
         temp2.splice(temp3)
         temp2 = (temp.length > temp3 ? stack.splice(temp3 - temp.length) : []).concat(temp2)
         temp = await temp(...temp2)
-        if (temp !== undefined && temp !== null) stack.push(temp)
+        if (temp != undefined) stack.push(temp)
     } else {
         temp2 = temp in var_dict ? var_dict[temp] : temp
         await eval_what(temp2, fstack, var_dict, output)
@@ -241,7 +241,9 @@ const eval_what = async (
             stack = []
             fstack.push(stack)
         } else if ('|' === c) {
-            fstack.push(stack.pop())
+            temp = stack.pop()
+            fstack.push(temp)
+            stack = temp
         } else if (']' === c) {
             if (fstack.length <= 2) fstack.unshift([])
             stack = fstack.at(-2)
@@ -328,10 +330,11 @@ const eval_what = async (
         } else if (";" === c) {
             temp = stack.pop()
             temp2 = stack.pop()
-            if (temp2 === undefined || temp2 === null || Number.isNaN(temp2)) {
-                temp2 = stack.at(-1).length
+            if ([undefined, -1, stack.at(-1).length].includes(temp2) || Number.isNaN(temp2)) {
+                stack.at(-1).push(temp)
+            } else {
+                stack.at(-1).fill(temp, temp2, temp2 + 1)
             }
-            stack.at(-1).fill(temp, temp2, temp2 + 1)
         } else if ("$" === c) {
             temp = stack.pop()
             stack.at(-1).splice(temp, 1)
@@ -342,4 +345,4 @@ const eval_what = async (
     return stack.at(-1)
 }
 
-export {formatting, exec_what, eval_what, run_what, default_var_dict}
+export {formatting, exec_what, eval_what, run_what, default_var_dict, need_svo, need_fstack}

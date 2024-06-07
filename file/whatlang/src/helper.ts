@@ -101,12 +101,12 @@ const help_record : Record<string, string> = ({
         `弹出二值，返回 (底值的字符串表示).split(顶值)。`
         `对于 Array.prototype.split，请使用 range@(...)#。`
     ()),
-    "len join reverse index": (S
+    "len join reverse in": (S
         `更多的数组操作。我们为什么需要这些？`
         `    len 返回栈顶数组长度`
         `    join 弹出，返回 栈顶.join(该值)`
         `    reverse 返回 栈顶.toReversed()`
-        `    index 弹出，返回 栈顶.indexOf(该值)`
+        `    in 弹出，返回 栈顶.indexOf(该值)`
     ()),
     "filter": (S
         `弹出二值，对于栈顶中的每个元素，_`
@@ -152,15 +152,18 @@ const help_record : Record<string, string> = ({
     "help helpall" : (S
         `……？`
     ()),
-    "pr prompt": (S
+    "pr propt prompt": (S
         `仅对后文管用的消息获取。`
-        `    pr 大致上是 (me@1, prompt@ 0,)@ 的缩写。`
-        `    prompt 弹出，若为数组则试图获取发送者ID在该数组中的消息，_`
+        `    pr 大致上是 (me@1, propt@ 0,)@ 的缩写。`
+        `    propt 弹出，若为数组则试图获取发送者ID在该数组中的消息，_`
         `否则试图获取发送者ID为该数的消息，_`
-        `返回由消息内容，消息ID，消息发送者，消息发送者ID构成的数组。`
+        `返回由消息内容，消息ID，消息发送者，消息发送者ID，消息所在频道ID构成的数组。`
+        `    prompt 弹出二值，若底值为数组则试图获取发送者ID在该数组中的消息，_`
+        `否则试图获取发送者ID为该数的消息，对顶值运行 @ 指令，_`
+        `若栈顶为真值则返回……数组，否则继续获取消息。`
     ()),
     me : (S
-        `返回由该消息内容，消息ID，消息发送者，消息发送者ID构成的数组。`
+        `返回由该消息内容，消息ID，消息发送者，消息发送者ID，消息所在频道ID构成的数组。`
         `呃不，不是我，是你。`
     ()),
     cat: (S
@@ -173,18 +176,24 @@ const help_record : Record<string, string> = ({
         `    outimg 弹出，输出 h.image(该值)`
         `    outaudio 弹出，输出 h.audio(该值)`
         `    outvideo outfile outquote... `
-        `    outhtml 弹出，以 Consolas 字体显示为图片`
-        `    outksq 弹出，以 Kreative Square 字体显示为图片`
+        `    outhtml 弹出，以 Consolas 字体显示为图片并输出`
+        `    outksq 弹出，以 Kreative Square 字体显示为图片并输出`
+    ()),
+    "nout nouts nsend": (S
+        `撤回上个输出。别干见不得人的事昂。`
+        `    nout 取消前一次输出的内容`
+        `    nouts 弹出，取消前(该值)次输出的内容`
+        `    nsend 弹出，撤回消息ID为该值的消息`
     ()),
     "send sends": (S
         `如果你需要发送多条消息，也许会挺好用的？`
-        `    send 立即发送前一次输出的内容`
-        `    sends 弹出，立即发送前(该值)次输出的内容`
+        `    send 立即发送前一次输出的内容，返回消息ID构成的数组`
+        `    sends 弹出，立即发送前(该值)次输出的内容，返回消息ID构成的数组`
     ()),
     msgre: (S
         `仅对前文管用的消息获取。`
         `弹出，获取一条满足 (该值.test(内容) || 该值 === 内容) 的消息，_`
-        `并返回由消息内容，消息ID，消息发送者，消息发送者ID构成的数组。`
+        `并返回由消息内容，消息ID，消息发送者，消息发送者ID，消息所在频道ID构成的数组。`
     ()),
     sleep: (S
         `弹出，睡死(该值)秒。`
@@ -245,7 +254,7 @@ const help : Function = (x : string | undefined) => {
         return (S
             `{...} /!+/`
             ``
-            `大致是 Brainf??k 中的 [...]（但是我们有break所以我们牛逼）`
+            `大致是 Brainf??k 中的 [...]（但是我们有 break 所以我们牛逼）`
             `用于判断的值需要复用请使用 :{...:}。`
             `    { 弹出，若为假则跳转至匹配的 }`
             `    } 弹出，若为真则跳转至匹配的 {`
