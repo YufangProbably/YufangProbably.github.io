@@ -2,44 +2,62 @@
 <html>
 
 <head>
-  <title>有头苍蝇</title>
-  <link rel="stylesheet" href="./style.css">
+<meta name="viewport" charset="utf-8" content="width=device-width">
+<title>有头苍蝇</title>
+<link rel="stylesheet" href="./style.css">
 </head>
 
-<body>
-  <h1>有头苍蝇.jpg</h1>
-  <p>P tag test</p><br/>
-  <textarea rows="6" cols="50" id="write" class="unspaced" placeholder="Please type..."></textarea>
-  <button onclick="setWrite()" class="unspaced">Commit to no where</button><br/>
-  <br/>
-  <a href="./esolangs">esolang</a><br/>
+<body class="midbox">
+<button id="home" onclick="alert('dude this is home')"></button>
+<h1>有头苍蝇.jpg</h1>
+<p>emm... 总之欢迎来到我的站点？</p><br/>
+<p>这里实在没什么能拿得出手的，除了那堆离谱的红青配色。看啊，这小破东西甚至有个 Home 键，然后其它地方就直接摆烂成这 * 样？</p><br/>
+<br/>
+<div class="mid">
+<textarea rows="6" cols="50" id="write" class="mid" placeholder="Please type..."></textarea>
+<div class="br0"></div>
+<button onclick="setWrite()">Commit to no where</button>
+<button onclick="" class="mid reverse">The Useless Button</button>
+<div class="br2"></div>
+<hr/>
+<div class="br2"></div>
+<p>实在闲着可以来看看下面的随便什么东西。</p>
+<div class="br"></div>
+<table>
+<tr>
+<td><a href="./brainfuck">Brainfuck 运行</a></td>
+<td><a href="./highlight">代码高亮编辑器</a></td>
+</tr>
+</table>
+</div>
+<br/>
 
 <script>
-  const setCookie = (name,value,exdays) => {
-    document.cookie = `${name}=${value};max-age=${24*60*60*exdays}`;
-  }
-  const delCookie = (name) => setCookie(name,'',0)
-  const getCookie = (name) => document.cookie.replace(
+const setCookie = (name, value, exdays) => {
+    document.cookie = `${name}=${value};max-age=${86400 * exdays}`;
+}
+
+const delCookie = name => setCookie(name, "", 0);
+const getCookie = name => document.cookie.replace(
     new RegExp(`(?:(?:^|.*;\\s*)${name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
     "$1",
-  );
+);
 
-  const setWrite = () => {
+const setWrite = () => {
     let text = document.getElementById("write").value;
-    alert(`👍You just commited ${text ? '"'+text+'"' : "Nothing"}👍`);
-    setCookie("message",document.getElementById("write").value,365)
-  };
+    // alert(`👍You just commited ${text ? '"'+text+'"' : "Nothing"}👍`);
+    setCookie("message", document.getElementById("write").value, 365)
+};
 
-  document.getElementById("write").value = getCookie("message");
+document.getElementById("write").value = getCookie("message");
 
-  const params = new URL(document.location.href).searchParams;
-  if (params.get("type") == "writeonly") {
-    setCookie("message",params.get("text"),365);
+const params = new URL(document.location.href).searchParams;
+if (params.get("type") == "writeonly") {
+    setCookie("message", params.get("text"), 365);
     document.documentElement.innerHTML = "";
-  } else if (params.get("type") == "readonly") {
+} else if (params.get("type") == "readonly") {
     document.documentElement.innerHTML = getCookie("message");
-  }
+}
 </script>
 </body>
-
 </html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta name="viewport" charset="utf-8" content="width=device-width">
+<title>超超脑子</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+<button id="home" onclick="location.href = '../';"></button>
+<h1>Brainfuck</h1>
+<a href="https://esolangs.org/wiki/Brainfuck">Esolang wiki: Brainfuck</a><br/>
+<p>（目前只支持+ - [ ] < > .）</p><br/>
+<br/>
+<div class="mid">
+<textarea rows="6" cols="50" id="code" class="code" placeholder="Please type BF code..."></textarea>
+<div class="br0"></div>
+<button onclick="runBF()" class="reverse">Run</button>
+<div class="br"></div>
+<textarea rows="6" cols="50" id="out" readonly class="reverse"></textarea>
+</div>
+<script>
+const setCookie = (name,value,exdays) => {
+    document.cookie = `${name}=${value};max-age=${24*60*60*exdays}`;
+}
+const delCookie = (name) => setCookie(name,'',0)
+const getCookie = (name) => document.cookie.replace(
+    new RegExp(`(?:(?:^|.*;\\s*)${name}\\s*\\=\\s*([^;]*).*$)|^.*$`),
+    "$1",
+);
+
+const runBF = () => {
+    let code = document.getElementById("code").value;
+    setCookie("code", code, 365);
+    let tape = [0];
+    let tape_index = 0;
+    let code_index = 0;
+    let current;
+    let out = "";
+    const fuck_map = ({
+        "+" : () => {tape[tape_index]++; tape[tape_index] %= 256;},
+        "-" : () => {tape[tape_index] += 255; tape[tape_index] %= 256;},
+        ">" : () => {tape_index++; tape_index >= tape.length ? tape.push(0) : 0},
+        "<" : () => tape_index <= 0 ? tape.unshift(0) : tape_index--,
+        "[" : () => {
+            let brackets = (tape[tape_index] == 0) + 0;
+            while (brackets) {
+                code_index++;
+                current = code[code_index];
+                brackets += (current == "[" ? 1 : current == "]" ? -1 : 0);
+            }
+        },
+        "]" : () => {
+            let brackets = (tape[tape_index] != 0) + 0;
+            while (brackets) {
+                code_index--;
+                current = code[code_index];
+                brackets += (current == "]" ? 1 : current == "[" ? -1 : 0);
+            }
+        },
+        "." : () => out += String.fromCharCode(tape[tape_index]),
+    });
+    while (code.length > code_index) {
+        current = code[code_index];
+        //console.log(current);
+        (current in fuck_map ? fuck_map[current] : () => 0)();
+        code_index++;
+    }
+    console.log(tape);
+    document.getElementById("out").value = out || "(literally nothing)";
+};
+
+document.getElementById("code").value = getCookie("code");
+</script>
+</body>
+
+</html>

@@ -64,7 +64,7 @@ const run_what = async (code : string, session : Session) => {
                     )
                     const timeout = setTimeout(() => {
                         dispose()
-                        res(undefined)
+                        res([undefined])
                     }, session.app.config.delay.prompt)
                     return
                 })
@@ -98,7 +98,7 @@ const run_what = async (code : string, session : Session) => {
                     )
                     const timeout = setTimeout(() => {
                         dispose()
-                        res(undefined)
+                        res([undefined])
                     }, session.app.config.delay.prompt)
                     return
                 })

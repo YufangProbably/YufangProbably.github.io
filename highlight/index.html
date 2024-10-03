@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang=zh-CN>
+<head>
+<meta name="viewport" charset="utf-8" content="width=device-width">
+<title>代码高亮编辑器</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+.codecontainer {
+    opacity: 1;
+    background: #223;
+    font-family: Consolas, monospace;
+    white-space: pre-wrap;
+    padding: 0.5rem;
+    border-radius: 0.2rem;
+    pointer-events: none;
+    min-height: 5lh;
+}
+::highlight(selected-highlight) {
+    color: #FFF;
+    background: rgba(0, 128, 192, 0.8);
+    position: relative;
+}
+.cursor {
+    display: inline-block;
+    position: absolute;
+    width: min(0.05rem, 1px);
+    height: 1lh;
+    background-color: #FFF;
+    animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+@keyframes move {
+    from { background-position: 0% 0; }
+    to { background-position: 200% 0; }
+}
+.codeinput {
+    opacity: 0;
+    resize: none;
+    font-family: Consolas, monospace;
+    padding: 0.5rem;
+    min-height: 5lh;
+}
+.recap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+.codebox {
+    position: relative;
+}
+</style>
+</head>
+<body>
+<button id="home" onclick="location.href = '../'"></button>
+<h1>代码高亮</h1>
+<p>是的我只写了 Whatlang 高亮。你为什么不试试别家的呢？</p><br/>
+<br/>
+<div class="codebox">
+<label for="codeinput" style="opacity: 0">_</label>
+<textarea class="codeinput recap" id="codeinput"></textarea>
+<div class="codecontainer recap" id="codecontainer"></div>
+</div>
+<script>
+// document.documentElement.style.fontSize = 21000 / document.documentElement.clientWidth + "px";
+
+const highlighting = code => {
+    let
+        words = [], temp = void 0,
+        i = 0, c = " ", cur = "",
+        layers = {}
+    ;
+    while (i < code.length) {
+        c = code[i];
+        if (/[1-9]/.test(c)) {
+            cur += c;
+            while (
+                ++i < code.length
+                && /\d/.test(c = code[i])
+            ) cur += c;
+            words.push({
+                type: "num",
+                text: cur,
+            }); cur = "";
+        } else if ("0" === c) {
+            cur = []; temp = 0; i--;
+            while (
+                ++i < code.length
+                && "0" === (c = code[i])
+            ) cur.unshift({
+                type: "num",
+                text: c,
+                layer: temp++,
+            });
+            if (/[1-9]/.test(c))
+                cur.map(i => i.layer++);
+            words.push(...cur);
+            cur = ""; temp = void 0;
+        } else if (/[A-Za-z]/.test(c)) {
+            cur += c;
+            while (
+                ++i < code.length
+                && /[A-Za-z0-9_]/.test(c = code[i])
+            ) cur += c;
+            temp = {
+                "^": "var",
+                "=": "varset",
+                "@": "varcall",
+            }[c]; temp && i++;
+            words.push({
+                type: temp || "name",
+                text: cur + (temp ? c : ""),
+            }); cur = ""; temp = void 0;
+        } else if ("\"`".includes(c)) {
+            cur += c; temp = c;
+            while (
+                ++i < code.length
+                && temp !== (c = code[i])
+            ) {
+                cur += c;
+                "\\" === c && (cur += (c = code[++i]) ?? "");
+            }
+            words.push({
+                type: ({
+                    "\"": "string",
+                    "`": "strout",
+                })[temp],
+                text: cur + (i < code.length ? c : ""),
+            }); cur = ""; temp = void 0; i++;
+        } else if ("'" === c) {
+            words.push({
+                type: "char",
+                text: c + (i + 1 < code.length ? (c = code[++i]) : ""),
+            }); i++;
+        } else if ("+-*/%@#?~.,;$".includes(c)) {
+            words.push({
+                type: "op",
+                text: c,
+            }); i++;
+        } else if ("_:\&<>".includes(c)) {
+            words.push({
+                type: "stackop",
+                text: c,
+            }); i++;
+        } else if ("([|{".includes(c)) {
+            temp = "([[{"["([|{".indexOf(c)];
+            layers[temp] = (layers[temp] ?? 0) + 1;
+            words.push({
+                type: "bracket",
+                text: c,
+                layer: layers[temp],
+            }); i++;
+        } else if ("!".includes(c)) {
+            words.push({
+                type: "break",
+                text: c,
+                layer: layers[temp],
+            }); i++;
+        } else if (")]}".includes(c)) {
+            temp = "([{"[")]}".indexOf(c)];
+            layers[temp] = (layers[temp] ?? 0) - 1;
+            words.push({
+                type: "bracket",
+                text: c,
+                layer: layers[temp] + 1,
+            }); i++; temp = void 0;
+        } else if (!i && "¿" === c) {
+            words.push({
+                type: "rainbow",
+                text: c,
+            }); i++;
+        } else {
+            words.push({
+                type: "none",
+                text: c,
+            }); i++;
+        }
+    }
+    words = words.reduce((last, i) => {
+        if (
+            Object.keys(i).length != 2
+            || !last.length
+            || Object.keys(last.at(-1)).length != 2
+        )
+            return last.concat([i]);
+        if (
+            last.at(-1).type === i.type
+            || /^\s*$/.test(i.text)
+        )
+            return last.slice(0, -1).concat([{
+                type: last.at(-1).type,
+                text: last.at(-1).text + i.text
+            }]);
+        return last.concat([i]);
+    }, []);
+    return words;
+}
+
+// from GPT i guess {
+
+function createHighlightedElements(elements, colors) {
+    const container = document.createElement("div");
+
+    elements.forEach(item => {
+        const span = document.createElement("span");
+        span.textContent = item.text;
+        if (item.type === "rainbow") {
+            span.style.fontWeight = "bold";
+            span.style.background = colors["rainbow"];
+            span.style.animation = "move 1s linear infinite"
+            span.style.backgroundSize = "200%";
+            span.style.color = "transparent";
+            span.style.backgroundClip = "text";
+            span.style.WebkitBackgroundClip = "text";
+        } else {
+            span.style.color = colors[item.type] || colors["none"];
+        }
+        container.appendChild(span);
+    });
+
+    return container;
+}
+
+function findCharPosition(divElement, n) {
+    const spans = divElement.getElementsByTagName("span");
+    let charCount = 0;
+
+    for (let i = 0; i < spans.length; i++) {
+        const spanText = spans[i].textContent;
+        charCount += spanText.length;
+
+        if (charCount >= n) {
+            return {
+                spanElement: spans[i],
+                spanIndex: i,
+                charIndex: spanText.length - charCount + n
+            };
+        }
+    }
+
+    return null; // 如果超出范围
+}
+
+function addCursorToSpan(spanElement, n) {
+    const text = spanElement.textContent;
+
+    if (n < 0 || n > text.length) {
+        console.error("n 超出范围");
+        return;
+    }
+
+    // 清空内容
+    spanElement.innerHTML = "";
+
+    let cursor;
+
+    // 插入字符和光标
+    for (let i = 0; i < text.length; i++) {
+        if (i === n) {
+            cursor = document.createElement("span");
+            cursor.className = "cursor"; // 添加光标类
+            spanElement.appendChild(cursor);
+        }
+        spanElement.appendChild(document.createTextNode(text[i]));
+    }
+
+    // 如果光标在文本末尾，确保光标显示在最后
+    if (n === text.length) {
+        cursor = document.createElement("span");
+        cursor.className = "cursor";
+        spanElement.appendChild(cursor);
+    }
+
+    return cursor;
+}
+
+// } GPT code ends
+
+const colors = {
+    none: "#EEEEEC",
+    string: "#8F8",
+    strout: "#9F8",
+    char: "#8F9",
+    name: "#FAA",
+    var: "#FAA",
+    varset: "#FAA",
+    varcall: "#FCC",
+    num: "#DDF",
+    op: "#AAF",
+    stackop: "#BBF",
+    bracket: "#FFF",
+    break: "#FFF",
+    rainbow: "repeating-linear-gradient(to right, #F79, #FB9, #BAD, #E7D)",
+};
+
+const codeContainer = document.getElementById("codecontainer");
+const codeInputer = document.getElementById("codeinput");
+codeInputer.oninput = () => {
+    codeContainer.innerHTML = "";
+    codeContainer.appendChild(createHighlightedElements(
+        highlighting(codeInputer.value),
+        colors
+    ));
+    let height = (codeInputer
+        .value
+        ?.match(/\n/g)
+        ?.length
+    ?? 0) + 1 + "lh";
+    codeInputer.style.height = height;
+    codeContainer.style.height = height;
+};
+
+const selectedHighlight = new Highlight();
+CSS.highlights.set("selected-highlight", selectedHighlight);
+var cursorSpan;
+
+codeInputer.onselectionchange = () => {
+    selectedHighlight.clear();
+    const range = new Range();
+    let charStart = findCharPosition(codeContainer, codeInputer.selectionStart);
+    let charEnd = findCharPosition(codeContainer, codeInputer.selectionEnd);
+
+    if (!charStart || !charEnd) return;
+    cursorSpan?.remove();
+    if (codeInputer.selectionStart === codeInputer.selectionEnd) {
+        cursorSpan = addCursorToSpan(
+            charEnd.spanElement,
+            charEnd.charIndex
+        );
+    } else {
+        range.setStart(
+            charStart.spanElement,
+            charStart.charIndex
+        );
+        range.setEnd(
+            charEnd.spanElement,
+            charEnd.charIndex
+        );
+        selectedHighlight.add(range);
+    }
+};
+</script>
+</body>
+</html>
