@@ -2,7 +2,7 @@
     sys := __import__("sys"),
     random := __import__("random"),
 
-    IDS := __import__("IDS"),
+    IDS := __import__("IDS_parse"),
     cat := __import__("catcher"),
 
     matches := lambda x, y: (
