@@ -50,15 +50,13 @@
 
     IDS_get := lambda char: (
         get := data.get(char, None),
-        res := None,
-        (
+        res := [],
+        None if get is None else (
             res := [IDS_solve(i) for i in get],
             data.update({char: res}),
         ) if type(get[0]) == str else (
             res := get,
-        ) if type(get[0]) == list else (
-            res := None
-        ),
+        ) if type(get[0]) == list else None,
         res
     )[-1],
     cache_in := lambda: cat.TPwith(

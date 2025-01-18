@@ -148,11 +148,11 @@
             help = "the file read from; Could be the script when `--eval`",
         ),
         args := parser.parse_args(args = None if sys.argv[1:] else ["-h"]),
-        
+
         code := args.source if args.eval else cat.TPwith(
-            open(args.source, "r"),
+            open(args.source, "r", encoding = "utf-8"),
             lambda f: f.read(),
-        ),
+        )[0],
         彳亍_exec(
             code,
             extend = args.extend,
