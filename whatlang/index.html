@@ -11,6 +11,7 @@
     font-size: 14px;
     font-family: Consolas, monospace;
     white-space: break-spaces;
+    word-break: break-all;
     padding: 0.5rem;
     border-radius: 0.2rem;
     pointer-events: none;
@@ -339,15 +340,16 @@ codeInputer.oninput = () => {
         highlighting(codeInputer.value),
         colors
     ));
-    let height = (codeInputer
-        .value
-        ?.match(/\n/g)
-        ?.length
-    ?? 0) + 1 + "lh";
+
+    codeInputer.style.height = "auto";
+    codeContainer.style.height = "auto";
+    let height = codeInputer.scrollHeight + "px";
     codeInputer.style.height = height;
     codeContainer.style.height = height;
+
     codeBox.style.height = height;
 };
+codeInputer.oninput();
 
 const selectedHighlight = new Highlight();
 CSS.highlights.set("selected-highlight", selectedHighlight);
