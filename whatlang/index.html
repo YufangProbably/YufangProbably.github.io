@@ -2,18 +2,20 @@
 <html lang=zh-CN>
 <head>
 <meta name="viewport" charset="utf-8" content="width=device-width">
-<title>代码高亮编辑器</title>
+<title>WhatLang 编辑器</title>
 <link rel="stylesheet" href="../style.css">
 <style>
 .codecontainer {
     opacity: 1;
     background: #223;
+    font-size: 14px;
     font-family: Consolas, monospace;
-    white-space: pre-wrap;
+    white-space: break-spaces;
     padding: 0.5rem;
     border-radius: 0.2rem;
     pointer-events: none;
     min-height: 5lh;
+    width: 100%;
 }
 ::highlight(selected-highlight) {
     color: #FFF;
@@ -39,9 +41,12 @@
 .codeinput {
     opacity: 0;
     resize: none;
+    font-size: 14px;
     font-family: Consolas, monospace;
     padding: 0.5rem;
     min-height: 5lh;
+    width: 100%;
+    margin: 0;
 }
 .recap {
     position: absolute;
@@ -51,22 +56,52 @@
 }
 .codebox {
     position: relative;
+    font-size: 14px;
+    min-height: 5lh;
+    width: 100%;
+}
+.codeoutput {
+    position: relative;
+    min-height: 5lh;
+    width: 100%;
+}
+.fileinput {
+    display: none;
 }
 </style>
 </head>
 <body>
 <button id="home" onclick="location.href = '../'"></button>
-<h1>代码高亮</h1>
-<p>是的我只写了 Whatlang 高亮。你为什么不试试别家的呢？</p><br/>
+<h1>WhatLang 编辑器</h1>
+<a href="https://esolangs.org/wiki/WhatLang">Esolang wiki: WhatLang</a><br/>
+<p>
+啊是的，“WhatLang 作者”终于干了点和 WhatLang 相关的事了。<br/><br/>
+正如我所说的，WhatLang 为一门大致上基于栈，完全没有任何优势的语言。<br/>
+<s>
+这破玩意目前只有一个 TypeScript 写的，
+在 Koishi 上运行的解释器（也就是你用的这个），
+所以很多指令都是只能在聊天平台上运行的。
+（也许我本来就是为了这个？）
+</s><br/>
+严格来说这玩意的解释器也算从 TypeScript 翻译过来的，
+不过如果你不介意的话……
+</p><br/>
 <br/>
-<div class="codebox">
+<div class="codebox" id="codebox">
 <label for="codeinput" style="opacity: 0">_</label>
 <textarea class="codeinput recap" id="codeinput"></textarea>
 <div class="codecontainer recap" id="codecontainer"></div>
 </div>
+<div class="br2"></div>
+<div class="mid">
+<button onclick="fileSave()">Save code</button>
+<button onclick="fileInput.click()">Load code</button>
+<button onclick="run()" class="reverse">Run the code</button>
+</div>
+<textarea class="codeoutput" id="codeoutput" readonly></textarea>
+<input type="file" id="fileinput" class="fileinput"/>
+<script type="text/javascript" src="whatlang_interpreter.js"></script>
 <script>
-// document.documentElement.style.fontSize = 21000 / document.documentElement.clientWidth + "px";
-
 const highlighting = code => {
     let
         words = [], temp = void 0,
@@ -125,7 +160,7 @@ const highlighting = code => {
             }
             words.push({
                 type: ({
-                    "\"": "string",
+                    '"': "string",
                     "`": "strout",
                 })[temp],
                 text: cur + (i < code.length ? c : ""),
@@ -167,7 +202,7 @@ const highlighting = code => {
                 text: c,
                 layer: layers[temp] + 1,
             }); i++; temp = void 0;
-        } else if (!i && "¿" === c) {
+        } else if (/* !i && */ "¿" === c) {
             words.push({
                 type: "rainbow",
                 text: c,
@@ -248,7 +283,6 @@ function addCursorToSpan(spanElement, n) {
     const text = spanElement.textContent;
 
     if (n < 0 || n > text.length) {
-        console.error("n 超出范围");
         return;
     }
 
@@ -298,6 +332,7 @@ const colors = {
 
 const codeContainer = document.getElementById("codecontainer");
 const codeInputer = document.getElementById("codeinput");
+const codeBox = document.getElementById("codebox");
 codeInputer.oninput = () => {
     codeContainer.innerHTML = "";
     codeContainer.appendChild(createHighlightedElements(
@@ -311,6 +346,7 @@ codeInputer.oninput = () => {
     ?? 0) + 1 + "lh";
     codeInputer.style.height = height;
     codeContainer.style.height = height;
+    codeBox.style.height = height;
 };
 
 const selectedHighlight = new Highlight();
@@ -341,6 +377,65 @@ codeInputer.onselectionchange = () => {
         );
         selectedHighlight.add(range);
     }
+};
+
+const codeOutput = document.getElementById("codeoutput");
+const run = () => {
+    let time = Date.now()
+    const h = setInterval(() => {
+        time = Date.now()
+    }, 1000)
+    outputed = false
+    codeOutput.style.color = "rgba(255, 255, 255, 0.8)";
+    codeOutput.value = "Running... "
+    try { eval_what(
+        /* code     */ codeInputer.value,
+        /* fstack   */ [[]],
+        /* var_dict */ { ...default_var_dict },
+        /* output   */ t => {
+            if (!outputed) {
+                codeOutput.style.color = "#FFF"
+                codeOutput.value = t
+            } else {
+                codeOutput.value += t
+            }
+            outputed = true
+        },
+        {
+            dead_loop_check() {
+                if (Date.now() - time > 5000) throw new Error("Execution time out")
+            }
+        }
+    ) } catch (e) {
+        codeOutput.value = String(e)
+        outputed = true
+        codeOutput.style.color = "#FDD"
+    } finally {
+        if (!outputed) { codeOutput.value = "No outputs! " }
+        clearInterval(h)
+    }
+}
+
+const fileInput = document.getElementById("fileinput");
+fileInput.addEventListener("input", e => {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+        codeInputer.value = reader.result
+        codeInputer.oninput();
+    });
+    if (file) reader.readAsText(file);
+});
+
+fileSave = () => {
+    const data = new Blob([codeInputer.value], { type: "text/plain" });
+    const url = URL.createObjectURL(data);
+
+    const file = document.createElement("a");
+    file.href = url;
+    file.download = "script.what";
+    file.click();
+    URL.revokeObjectURL(url);
 };
 </script>
 </body>
