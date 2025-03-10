@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" charset="utf-8" content="width=device-width">
+<title>Unnamed 3D language</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+canvas {
+    image-rendering: pixelated;
+    border: #444 solid 6px;
+    background: #FFF;
+    width: 600px;
+    height: 450px;
+}
+.input {
+    font-size: 14px;
+    font-family: Consolas, monospace;
+    min-height: 5lh;
+    width: 100%;
+    margin: 0;
+}
+</style>
+</head>
+<body>
+<button id="home" onclick="location.href = '../'"></button>
+<h1>未命名三维语言</h1>
+<p>
+总而言之是三维字什么的。<br/><br/>
+
+用 W A S D Shift Space 移动，↑ ↓ ← → 挪动视角，R 归位。<br/><br/>
+
+^ v &lt; &gt; 表示切换当前方向为向上、下、左、右；<br/>
+^3 表示向上移动 3 格；<br/>
+[...|...|...] 表示在该方向上写入文字；<br/>
+=(^1>2v1>) 表示写入一条向上 1 格，向右 2 格，向下 1 格，最后指向右侧的等价线；<br/>
+-(...) 表示写入一条连接线；<br/>
+, 表示保存一次当前坐标；<br/>
+` 表示读取一次当前坐标；<br/>
+#(0,0,0,1,1,1,...) 表示直接绘制笔画，每 6 个数一条线段。<br/><br/>
+
+数字允许分数，不允许负数或小数。
+</p><br/>
+<br/>
+<div class="mid">
+<textarea class="input" id="input">
+<2^1/2>,,[YOU|SHINE]v[IT]=(v1v)>[BIRD|FLY|IT]<2^1[OVER]`v1=(>3/2>)=(>3/2v1v)`^1=(^)>[IT|KNOCK|DANGER]
+</textarea>
+<div class="br2"></div>
+<canvas id="canvas"></canvas>
+</div>
+<script>
+const canvas = document.getElementById("canvas");
+const input = document.getElementById("input");
+const ctx = canvas.getContext("2d");
+
+const dpr = window.devicePixelRatio || 1;
+let width, height;
+const update_scale = (w, h) => {
+    width = w; height = h;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+}
+update_scale(600, 450);
+
+ctx.lineCap = "round";
+
+const clip_line = (p1, p2) => {
+    let [x1, y1, z1] = p1;
+    let [x2, y2, z2] = p2;
+
+    if (z1 <= 0 || z2 <= 0) return null;
+    return [p1, p2];
+};
+
+const draw_line = (x1, y1, z1, x2, y2, z2) => {
+    x1 += width / 2; y1 += height / 2;
+    x2 += width / 2; y2 += height / 2;
+
+    ctx.strokeStyle = "#444";
+    ctx.lineWidth = (
+        x1 === x2
+        && y1 === y2
+        && z1 === z2
+    ) ? 6 : 3;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.closePath();
+};
+
+const rotate = (x, y, t) => {
+    let sin = Math.sin(t),
+        cos = Math.cos(t);
+    return [cos * x - sin * y, sin * x + cos * y];
+};
+const rotate3d = (x, y, z, xy, yz, zx, ox = 0, oy = 0, oz = 0) => {
+    x -= ox; y -= oy; z -= oz;
+    [z, x] = rotate(z, x, zx);
+    [y, z] = rotate(y, z, yz);
+    [x, y] = rotate(x, y, xy);
+    x += ox; y += oy; z += oz;
+    return [x, y, z];
+};
+
+const move = (x, y, z, dx, dy, dz) => [x + dx, y + dy, z + dz];
+const scale = (x, y, z, scale) => [x * scale, y * scale, z * scale];
+
+const flatten = (x, y, z, scale) => [scale / z * x, scale / z * y, z];
+
+const sort_lines = arr => arr.sort((x, y) => (y[0][2] + y[1][2]) - (x[0][2] + x[1][2]));
+
+const draw = (lines) => {
+    ctx.clearRect(0, 0, width, height);
+    lines = lines.map(line => {
+        const clipped = clip_line(...line);
+        if (clipped === null) return null;
+        const displays = clipped.map(i => flatten(...i, 400));
+        return displays;
+    }).filter(l => l);
+    sort_lines(lines);
+    lines.map(i => draw_line(...i.flat()));
+}
+
+const cuboid = (x1, y1, z1, x2, y2, z2) => [
+    [[x1, y1, z1], [x2, y1, z1]],
+    [[x1, y1, z1], [x1, y2, z1]],
+    [[x1, y1, z1], [x1, y1, z2]],
+
+    [[x1, y2, z2], [x2, y2, z2]],
+    [[x1, y2, z2], [x1, y1, z2]],
+    [[x1, y2, z2], [x1, y2, z1]],
+
+    [[x2, y1, z2], [x1, y1, z2]],
+    [[x2, y1, z2], [x2, y2, z2]],
+    [[x2, y1, z2], [x2, y1, z1]],
+
+    [[x2, y2, z1], [x1, y2, z1]],
+    [[x2, y2, z1], [x2, y1, z1]],
+    [[x2, y2, z1], [x2, y2, z2]],
+];
+
+const HAND_LEFT = [
+    [[0, 1/8, 1/2], [0, 7/8, 1/2]],
+    [[0, 1/2, 1/8], [0, 1/2, 7/8]],
+    [[0, 1/8, 1/2], [3/8, 1/8, 1/2]],
+    [[0, 7/8, 1/2], [3/8, 7/8, 1/2]],
+    [[0, 1/2, 1/8], [3/8, 1/2, 1/8]],
+    [[0, 1/2, 7/8], [3/8, 1/2, 7/8]],
+];
+const character_map = {
+    IT: [
+        ...cuboid(1/8, 1/8, 1/8, 7/8, 7/8, 7/8),
+    ],
+    NOT: [
+        [[0, 1/2, 1/2], [1, 1/2, 1/2]],
+        [[1/2, 0, 1/2], [1/2, 1, 1/2]],
+        [[1/2, 1/2, 0], [1/2, 1/2, 1]],
+    ],
+    ME: [
+        [[1/2, 1, 1/2], [3/4, 13/16, 1/2]],
+        [[3/4, 13/16, 1/2], [15/16, 1/2, 1/2]],
+        [[15/16, 1/2, 1/2], [1, 0, 1/2]],
+
+        [[1/2, 1, 1/2], [1/4, 13/16, 1/2]],
+        [[1/4, 13/16, 1/2], [1/16, 1/2, 1/2]],
+        [[1/16, 1/2, 1/2], [0, 0, 1/2]],
+
+        [[1/2, 1, 1/2], [1/2, 13/16, 3/4]],
+        [[1/2, 13/16, 3/4], [1/2, 1/2, 15/16]],
+        [[1/2, 1/2, 15/16], [1/2, 0, 1]],
+
+        [[1/2, 1, 1/2], [1/2, 13/16, 1/4]],
+        [[1/2, 13/16, 1/4], [1/2, 1/2, 1/16]],
+        [[1/2, 1/2, 1/16], [1/2, 0, 0]],
+
+        [[1/31, 1/4, 1/2], [31/32, 1/4, 1/2]],
+        [[1/2, 1/4, 1/31], [1/2, 1/4, 31/32]],
+
+        [[1/2, 1, 1/2], [1/2, 0, 1/2]],
+    ],
+    YOU: [
+        [[1/2, 3/4, 0], [1/2, 3/4, 1]],
+        [[0, 3/4, 1/2], [1, 3/4, 1/2]],
+        [[1/2, 0, 1/2], [1/2, 1, 1/2]],
+
+        [[1/2, 3/4, 1/4], [1/2, 1/4, 1/4]],
+        [[1/2, 1/4, 1/4], [1/2, 0, 1/2]],
+
+        [[1/2, 3/4, 3/4], [1/2, 1/4, 3/4]],
+        [[1/2, 1/4, 3/4], [1/2, 0, 1/2]],
+
+        [[1/4, 3/4, 1/2], [1/4, 1/4, 1/2]],
+        [[1/4, 1/4, 1/2], [1/2, 0, 1/2]],
+
+        [[3/4, 3/4, 1/2], [3/4, 1/4, 1/2]],
+        [[3/4, 1/4, 1/2], [1/2, 0, 1/2]],
+    ],
+    HAND: [
+        [[1/2, 3/4, 1/2], [1/2, 1, 1/2]],
+        [[1/2, 3/4, 0], [1/2, 3/4, 1]],
+        [[0, 3/4, 1/2], [1, 3/4, 1/2]],
+        [[1/2, 3/4, 0], [1/2, 0, 0]],
+        [[1/2, 3/4, 1], [1/2, 0, 1]],
+        [[0, 3/4, 1/2], [0, 0, 1/2]],
+        [[1, 3/4, 1/2], [1, 0, 1/2]],
+    ],
+    HAVE: [
+        [[1/2, 1, 0], [1/2, 1, 1]],
+        [[0, 1, 1/2], [1, 1, 1/2]],
+        [[1/2, 1, 0], [1/2, 0, 0]],
+        [[1/2, 1, 1], [1/2, 0, 1]],
+        [[0, 1, 1/2], [0, 0, 1/2]],
+        [[1, 1, 1/2], [1, 0, 1/2]],
+
+        ...cuboid(3/16, 13/16, 3/16, 13/16, 3/16, 13/16),
+    ],
+    EAT: [
+        [[0, 1/2, 0], [1, 0, 0]],
+        [[0, 1/2, 0], [1, 1, 0]],
+        [[0, 1/2, 1], [1, 0, 1]],
+        [[0, 1/2, 1], [1, 1, 1]],
+        [[0, 1/2, 0], [0, 1/2, 1]],
+        [[1/2, 1/2, 1/2], [1/2, 1/2, 1/2]],
+    ],
+    /*
+    SPHERE: [
+        [[1, 1/2, 1/2], [81/82, 25/41, 1/2]],
+        [[81/82, 25/41, 1/2], [25/26, 9/13, 1/2]],
+        [[25/26, 9/13, 1/2], [9/10, 4/5, 1/2]],
+        [[9/10, 4/5, 1/2], [4/5, 9/10, 1/2]],
+        [[4/5, 9/10, 1/2], [9/13, 25/26, 1/2]],
+        [[9/13, 25/26, 1/2], [25/41, 81/82, 1/2]],
+        [[25/41, 81/82, 1/2], [1/2, 1, 1/2]],
+    ],
+    // This takes too much time to write.
+    // 'd better be generated.
+    */
+    CUBE: [
+        ...cuboid(0, 0, 0, 1, 1, 1),
+        ...cuboid(1/8, 1/8, 1/8, 7/8, 7/8, 7/8),
+    ],
+    KNOCK: [
+        ...HAND_LEFT,
+        [[3/16, 1/2, 1/2], [3/16, 1/2, 1/2]],
+
+        ...cuboid(1/2, 0, 0, 1, 1, 1),
+        [[7/8, 1/2, 1/2], [7/8, 1/2, 1/2]],
+    ],
+    SUN: [
+        ...cuboid(0, 0, 0, 1, 1, 1),
+        [[0, 1/2, 0], [0, 1/2, 1]],
+        [[0, 1/2, 1], [1, 1/2, 1]],
+        [[1, 1/2, 1], [1, 1/2, 0]],
+        [[1, 1/2, 0], [0, 1/2, 0]],
+    ],
+    LIGHT: [
+        [[1/2, 1/2, 1/2], [1/2, 1/2, 1/2]],
+        [[3/8, 3/8, 3/8], [0, 0, 0]],
+        [[3/8, 3/8, 5/8], [0, 0, 1]],
+        [[3/8, 5/8, 3/8], [0, 1, 0]],
+        [[3/8, 5/8, 5/8], [0, 1, 1]],
+        [[5/8, 3/8, 3/8], [1, 0, 0]],
+        [[5/8, 3/8, 5/8], [1, 0, 1]],
+        [[5/8, 5/8, 3/8], [1, 1, 0]],
+        [[5/8, 5/8, 5/8], [1, 1, 1]],
+    ],
+    SHINE: [
+        ...cuboid(0, 1/8, 1/8, 3/8, 7/8, 7/8),
+        [[0, 1/2, 1/8], [0, 1/2, 7/8]],
+        [[0, 1/2, 7/8], [3/8, 1/2, 7/8]],
+        [[3/8, 1/2, 7/8], [3/8, 1/2, 1/8]],
+        [[3/8, 1/2, 1/8], [0, 1/2, 1/8]],
+
+        [[3/4, 1/2, 1/2], [3/4, 1/2, 1/2]],
+        [[11/16, 3/8, 3/8], [1/2, 0, 0]],
+        [[11/16, 3/8, 5/8], [1/2, 0, 1]],
+        [[11/16, 5/8, 3/8], [1/2, 1, 0]],
+        [[11/16, 5/8, 5/8], [1/2, 1, 1]],
+        [[13/16, 3/8, 3/8], [1, 0, 0]],
+        [[13/16, 3/8, 5/8], [1, 0, 1]],
+        [[13/16, 5/8, 3/8], [1, 1, 0]],
+        [[13/16, 5/8, 5/8], [1, 1, 1]],
+    ],
+    BIRD: [
+        [[0, 1, 1/8], [1, 0, 1/8]],
+        [[0, 1, 7/8], [1, 0, 7/8]],
+        [[0, 1, 1/8], [0, 1, 7/8]],
+        [[1, 0, 1/8], [1, 0, 7/8]],
+        [[1, 0, 1/8], [1/4, 0, 1/8]],
+        [[1, 0, 7/8], [1/4, 0, 7/8]],
+        [[1/4, 0, 1/8], [1/4, 0, 7/8]],
+        [[3/4, 1/4, 1/8], [1/4, 1/4, 1/8]],
+        [[3/4, 1/4, 7/8], [1/4, 1/4, 7/8]],
+        [[1/4, 1/4, 1/8], [1/4, 1/4, 7/8]],
+        [[1/4, 0, 1/8], [1/4, 1/4, 1/8]],
+        [[1/4, 0, 7/8], [1/4, 1/4, 7/8]],
+        [[3/8, 1/8, 1/2], [3/8, 1/8, 1/2]],
+        ...cuboid(1/8, 3/8, 0, 7/8, 5/8, 1),
+    ],
+    CLOUD: [
+        [[0, 0, 0], [0, 0, 1]],
+        [[0, 0, 1], [1, 0, 1]],
+        [[1, 0, 1], [1, 0, 0]],
+        [[1, 0, 0], [0, 0, 0]],
+        [[0, 0, 0], [0, 3/8, 0]],
+        [[0, 0, 1], [0, 3/8, 1]],
+        [[1, 0, 1], [1, 3/8, 1]],
+        [[1, 0, 0], [1, 3/8, 0]],
+        [[0, 5/8, 0], [0, 1, 0]],
+        [[0, 5/8, 1], [0, 1, 1]],
+        [[1, 5/8, 1], [1, 1, 1]],
+        [[1, 5/8, 0], [1, 1, 0]],
+    ],
+    FLY: [
+        [[1/4, 1/4, 0], [1, 0, 0]],
+        [[1/4, 1/4, 1], [1, 0, 1]],
+        [[1/4, 1/4, 0], [0, 1, 0]],
+        [[1/4, 1/4, 1], [0, 1, 1]],
+        [[1, 0, 0], [1, 0, 1]],
+        [[0, 1, 0], [0, 1, 1]],
+        [[1, 0, 0], [1/4, 0, 0]],
+        [[1, 0, 1], [1/4, 0, 1]],
+        [[1/4, 0, 0], [1/4, 0, 1]],
+        [[5/8, 1/8, 0], [1/4, 1/8, 0]],
+        [[5/8, 1/8, 1], [1/4, 1/8, 1]],
+        [[1/4, 1/8, 0], [1/4, 1/8, 1]],
+        [[1/4, 0, 0], [1/4, 1/8, 0]],
+        [[1/4, 0, 1], [1/4, 1/8, 1]],
+        [[3/8, 1/16, 1/2], [3/8, 1/16, 1/2]],
+
+        [[1/4, 1/4, 1/8], [1/4, 1/4, 7/8]],
+        [[1/4, 1/4, 7/8], [1, 1/4, 7/8]],
+        [[1, 1/4, 7/8], [1, 1/4, 1/8]],
+        [[1, 1/4, 1/8], [1/4, 1/4, 1/8]],
+        [[1/4, 1/4, 1/8], [1/4, 3/8, 1/8]],
+        [[1/4, 1/4, 7/8], [1/4, 3/8, 7/8]],
+        [[1, 1/4, 7/8], [1, 3/8, 7/8]],
+        [[1, 1/4, 1/8], [1, 3/8, 1/8]],
+        [[1/4, 5/8, 1/8], [1/4, 1, 1/8]],
+        [[1/4, 5/8, 7/8], [1/4, 1, 7/8]],
+        [[1, 5/8, 7/8], [1, 1, 7/8]],
+        [[1, 5/8, 1/8], [1, 1, 1/8]],
+    ],
+    DAGGER: [
+        [[0, 1, 0], [1/2, 1/4, 0]],
+        [[0, 1/4, 0], [1, 1/4, 0]],
+        [[1, 1/4, 0], [1/2, 1, 0]],
+        [[1/2, 1, 0], [0, 1, 0]],
+        [[0, 1, 1], [1/2, 1/4, 1]],
+        [[0, 1/4, 1], [1, 1/4, 1]],
+        [[1, 1/4, 1], [1/2, 1, 1]],
+        [[1/2, 1, 1], [0, 1, 1]],
+        [[0, 1, 0], [0, 1, 1]],
+        [[0, 1/4, 0], [0, 1/4, 1]],
+        [[1, 1/4, 0], [1, 1/4, 1]],
+        [[1/2, 1, 0], [1/2, 1, 1]],
+        [[0, 1/4, 0], [1/6, 0, 0]],
+        [[0, 1/4, 1], [1/6, 0, 1]],
+        [[1/6, 0, 0], [1/6, 0, 1]],
+    ],
+    DANGER: [
+        [[1/8, 1, 1/8], [1/2, 13/16, 1/8]],
+        [[1/8, 13/16, 1/8], [7/8, 13/16, 1/8]],
+        [[7/8, 13/16, 1/8], [1/2, 1, 1/8]],
+        [[1/2, 1, 1/8], [1/8, 1, 1/8]],
+        [[1/8, 1, 7/8], [1/2, 13/16, 7/8]],
+        [[1/8, 13/16, 7/8], [7/8, 13/16, 7/8]],
+        [[7/8, 13/16, 7/8], [1/2, 1, 7/8]],
+        [[1/2, 1, 7/8], [1/8, 1, 7/8]],
+        [[1/8, 1, 1/8], [1/8, 1, 7/8]],
+        [[1/8, 13/16, 1/8], [1/8, 13/16, 7/8]],
+        [[7/8, 13/16, 1/8], [7/8, 13/16, 7/8]],
+        [[1/2, 1, 1/8], [1/2, 1, 7/8]],
+        [[1/8, 13/16, 1/8], [1/4, 3/4, 1/8]],
+        [[1/8, 13/16, 7/8], [1/4, 3/4, 7/8]],
+        [[1/4, 3/4, 1/8], [1/4, 3/4, 7/8]],
+
+        [[1/2, 3/4, 1/2], [1/4, 1/2, 1/2]],
+        [[1/2, 3/4, 1/2], [3/4, 1/2, 1/2]],
+        [[1/2, 3/4, 1/2], [1/2, 1/2, 1/4]],
+        [[1/2, 3/4, 1/2], [1/2, 1/2, 3/4]],
+        [[1/4, 1/2, 1/2], [1/4, 0, 1/2]],
+        [[3/4, 1/2, 1/2], [3/4, 0, 1/2]],
+        [[1/2, 1/2, 1/4], [1/2, 0, 1/4]],
+        [[1/2, 1/2, 3/4], [1/2, 0, 3/4]],
+        [[0, 0, 1/2], [1, 0, 1/2]],
+        [[1/2, 0, 0], [1/2, 0, 1]],
+        [[1/2, 3/4, 1/2], [1/2, 0, 1/2]],
+        [[0, 1, 1/2], [0, 0, 1/2]],
+        [[1, 1, 1/2], [1, 0, 1/2]],
+        [[1/2, 1, 0], [1/2, 0, 0]],
+        [[1/2, 1, 1], [1/2, 0, 1]],
+    ],
+    OVER: [
+        [[0, 1, 1/2], [0, 0, 1/2]],
+        [[0, 0, 1/2], [1, 0, 1/2]],
+        [[1, 0, 1/2], [1, 1, 1/2]],
+        [[1, 1, 1/4], [1, 1, 3/4]],
+
+        ...cuboid(3/16, 13/16, 3/16, 13/16, 3/16, 13/16),
+    ],
+};
+const execute = (command) => {
+    let lines = [];
+    let dir = [1, 0, 0],
+        pos = [0, 0, 0],
+        stack = [];
+    let i = 0;
+    while (i < command.length) {
+        if (command[i] === '[') {
+            const matched = command.slice(i).match(/^\[(.*?)\]/s);
+            i += ~-matched[0].length;
+            for (const name of matched[1].split(/[|,;]/)) {
+                const char = character_map[name.trim()];
+                if (char === undefined) continue;
+                const display = char.map(line => line.map(point => (
+                    move(...scale(...point, 7/8), ...pos)
+                )));
+                lines.push(...display);
+                pos = move(...pos, ...dir);
+            }
+        } else if ("><^v".includes(command[i])) {
+            dir = (
+                 command[i] === '>' ? [1, 0, 0]
+               : command[i] === '<' ? [-1, 0, 0]
+               : command[i] === '^' ? [0, -1, 0]
+               : command[i] === 'v' ? [0, 1, 0]
+               : null
+            );
+            const matched = command.slice(-~i).trim().match(/(\d+)?(?:\/(\d+))?/);
+            i += matched[0].length;
+            const dis = (matched[1] ?? 0) / (matched[2] ?? 1);
+            pos = move(...pos, ...scale(...dir, dis));
+        } else if (command[i] === ',') {
+            stack.push(pos);
+        } else if (command[i] === '`') {
+            pos = stack.pop() ?? [0, 0, 0];
+        } else if (command[i] === '#') {
+            const matched = command.slice(-~i).match(/\((.*?)\)/s);
+            i += matched[0].length;
+            const arr = matched[1].split(/[|,;]/).map(i => {
+                const submatched = i.trim().match(/(\d+)?(?:\/(\d+))?/s);
+                return (submatched[1] ?? 0) / (submatched[2] ?? 1);
+            });
+            const char = Array.from({ length: arr.length / 6 }, (_, i) => [
+                [arr[i * 6 + 0], arr[i * 6 + 1], arr[i * 6 + 2]],
+                [arr[i * 6 + 3], arr[i * 6 + 4], arr[i * 6 + 5]],
+            ]);
+            const display = char.map(line => line.map(point => (
+                move(...scale(...point, 7/8), ...pos)
+            )));
+            lines.push(...display);
+            pos = move(...pos, ...dir);
+        } else if (command[i] === '-') {
+            i += 2;
+            lines.push([
+                move(...move(...pos, ...scale(...dir, -3/8)), 7/16, 7/16, 7/16),
+                move(...pos, 7/16, 7/16, 7/16),
+            ]);
+            while (i < command.length) {
+                if (command[i] === ')') {
+                    break;
+                } else if ("><^v".includes(command[i])) {
+                    let cdir = (
+                          command[i] === '>' ? [1, 0, 0]
+                        : command[i] === '<' ? [-1, 0, 0]
+                        : command[i] === '^' ? [0, -1, 0]
+                        : command[i] === 'v' ? [0, 1, 0]
+                        : null
+                    );
+                    const matched = command.slice(-~i).trim().match(/(\d+)?(?:\/(\d+))?/);
+                    i += matched[0].length;
+                    const dis = (matched[1] ?? 0) / (matched[2] ?? 1);
+                    let cpos = move(...pos, ...scale(...cdir, dis));
+                    if (dis === 0) {
+                        lines.push([
+                            move(...move(...pos, ...scale(...cdir, 3/8)), 7/16, 7/16, 7/16),
+                            move(...pos, 7/16, 7/16, 7/16),
+                        ]);
+                    } else {
+                        lines.push([
+                            move(...cpos, 7/16, 7/16, 7/16),
+                            move(...pos, 7/16, 7/16, 7/16),
+                        ]);
+                        pos = cpos;
+                    }
+                    dir = cdir;
+                }
+                ++i;
+            }
+            pos = move(...pos, ...dir);
+        } else if (command[i] === '=') {
+            i += 2;
+            lines.push([
+                move(
+                    ...move(...pos, ...scale(...dir, -3/8)),
+                    ...move(7/16, 7/16, 7/16, ...scale(dir[1], dir[0], dir[2], 1/8)),
+                ), move(
+                    ...move(...pos, ...scale(...dir, -1/8)),
+                    ...move(7/16, 7/16, 7/16, ...scale(dir[1], dir[0], dir[2], 1/8)),
+                ),
+            ], [
+                move(
+                    ...move(...pos, ...scale(...dir, -3/8)),
+                    ...move(7/16, 7/16, 7/16, ...scale(dir[1], dir[0], dir[2], -1/8)),
+                ), move(
+                    ...move(...pos, ...scale(...dir, -1/8)),
+                    ...move(7/16, 7/16, 7/16, ...scale(dir[1], dir[0], dir[2], -1/8)),
+                ),
+            ]);
+            let cdir, ldir;
+            while (i < command.length) {
+                if (command[i] === ')') {
+                    break;
+                } else if ("><^v".includes(command[i])) {
+                    cdir = (
+                          command[i] === '>' ? [1, 0, 0]
+                        : command[i] === '<' ? [-1, 0, 0]
+                        : command[i] === '^' ? [0, -1, 0]
+                        : command[i] === 'v' ? [0, 1, 0]
+                        : null
+                    );
+                    const matched = command.slice(-~i).trim().match(/(\d+)?(?:\/(\d+))?/);
+                    i += matched[0].length;
+                    const dis = (matched[1] ?? 0) / (matched[2] ?? 1);
+                    let cpos = move(...pos, ...scale(...cdir, dis));
+                    if (dis !== 0) {
+                        if (dir[0] !== 1 && cdir[0] !== -1) lines.push([ 
+                            move(...pos, 5/16, 5/16, 7/16),
+                            move(...pos, 5/16, 9/16, 7/16),
+                        ]);
+                        if (dir[0] !== -1 && cdir[0] !== 1) lines.push([ 
+                            move(...pos, 9/16, 5/16, 7/16),
+                            move(...pos, 9/16, 9/16, 7/16),
+                        ]);
+                        if (dir[1] !== 1 && cdir[1] !== -1) lines.push([ 
+                            move(...pos, 5/16, 5/16, 7/16),
+                            move(...pos, 9/16, 5/16, 7/16),
+                        ]);
+                        if (dir[1] !== -1 && cdir[1] !== 1) lines.push([ 
+                            move(...pos, 5/16, 9/16, 7/16),
+                            move(...pos, 9/16, 9/16, 7/16),
+                        ]);
+                        lines.push([ 
+                            move(
+                                ...move(...cpos, ...scale(...cdir, -1/8)),
+                                ...move(7/16, 7/16, 7/16, ...scale(cdir[1], cdir[0], cdir[2], 1/8)),
+                            ), move(
+                                ...move(...pos, ...scale(...cdir, 1/8)),
+                                ...move(7/16, 7/16, 7/16, ...scale(cdir[1], cdir[0], cdir[2], 1/8)),
+                            ),
+                        ], [
+                            move(
+                                ...move(...cpos, ...scale(...cdir, -1/8)),
+                                ...move(7/16, 7/16, 7/16, ...scale(cdir[1], cdir[0], cdir[2], -1/8)),
+                            ), move(
+                                ...move(...pos, ...scale(...cdir, 1/8)),
+                                ...move(7/16, 7/16, 7/16, ...scale(cdir[1], cdir[0], cdir[2], -1/8)),
+                            ),
+                        ]);
+                        pos = cpos;
+                    }
+                    ldir = dir; dir = cdir;
+                }
+                ++i;
+            }
+            if (dir[0] !== -1 && ldir[0] !== 1) lines.push([ 
+                move(...pos, 5/16, 5/16, 7/16),
+                move(...pos, 5/16, 9/16, 7/16),
+            ]);
+            if (dir[0] !== 1 && ldir[0] !== -1) lines.push([ 
+                move(...pos, 9/16, 5/16, 7/16),
+                move(...pos, 9/16, 9/16, 7/16),
+            ]);
+            if (dir[1] !== -1 && ldir[1] !== 1) lines.push([ 
+                move(...pos, 5/16, 5/16, 7/16),
+                move(...pos, 9/16, 5/16, 7/16),
+            ]);
+            if (dir[1] !== 1 && ldir[1] !== -1) lines.push([ 
+                move(...pos, 5/16, 9/16, 7/16),
+                move(...pos, 9/16, 9/16, 7/16),
+            ]);
+            lines.push([
+                move(
+                    ...move(...pos, ...scale(...dir, 3/8)),
+                    ...move(7/16, 7/16, 7/16, ...scale(dir[1], dir[0], dir[2], 1/8)),
+                ), move(
+                    ...move(...pos, ...scale(...dir, 1/8)),
+                    ...move(7/16, 7/16, 7/16, ...scale(dir[1], dir[0], dir[2], 1/8)),
+                ),
+            ], [
+                move(
+                    ...move(...pos, ...scale(...dir, 3/8)),
+                    ...move(7/16, 7/16, 7/16, ...scale(dir[1], dir[0], dir[2], -1/8)),
+                ), move(
+                    ...move(...pos, ...scale(...dir, 1/8)),
+                    ...move(7/16, 7/16, 7/16, ...scale(dir[1], dir[0], dir[2], -1/8)),
+                ),
+            ]);
+            pos = move(...pos, ...dir);
+        }
+        ++i;
+    }
+    return lines;
+};
+
+let lines = execute(input.value);
+input.addEventListener("input", e => {
+    try {
+        lines = execute(input.value);
+    } catch(e) {
+        lines = [];
+    }
+});
+
+let focus_other = false;
+input.addEventListener("focus", e => {
+    focus_other = true;
+});
+input.addEventListener("blur", e => {
+    focus_other = false;
+});
+
+let pressed = Object.create(null);
+document.addEventListener("keydown", e => {
+    if (e.repeat || focus_other) return;
+    pressed[e.key.toLowerCase()] = true;
+});
+document.addEventListener("keyup", e => {
+    if (focus_other) return;
+    pressed[e.key.toLowerCase()] = false;
+});
+
+let times = 0,
+    x = 7/16, y = 7/16, z = -4,
+    zx = 0, xy = 0;
+
+setInterval(() => {
+    ++times;
+
+    if (pressed.r) {
+        x = 7/16; y = 7/16; z = -4;
+        zx = 0; xy = 0;
+    }
+
+    const [dx, dz] = rotate(
+        (pressed.d || 0) - (pressed.a || 0),
+        (pressed.w || 0) - (pressed.s || 0),
+        -zx,
+    );
+    x += dx * .1; z += dz * .1;
+    y += ((pressed.shift || 0) - (pressed[" "] || 0)) * .1;
+
+    zx += ((pressed.arrowright || 0) - (pressed.arrowleft || 0)) * Math.PI * .01;
+    xy += (
+        (Math.PI / 2 >= xy && pressed.arrowup || 0)
+        - (-Math.PI / 2 <= xy && pressed.arrowdown || 0)
+    ) * Math.PI * .01;
+
+    let translated = lines.map(line => line.map(point => {
+        const movroted = rotate3d(
+            point[0] - x, point[1] - y, point[2] - z,
+            0, -xy, -zx,
+        );
+        return movroted;
+    }));
+
+    draw(translated);
+}, 1000 / 30);
+
+</script>
+</body>
+</html>
